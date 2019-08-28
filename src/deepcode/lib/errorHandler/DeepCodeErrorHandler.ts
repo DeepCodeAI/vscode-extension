@@ -17,7 +17,6 @@ class DeepCodeErrorHandler implements DeepCode.ErrorHandlerInterface {
   private unauthorizedErrorSolveAttemts: number = ATTEMPTS_AMMOUNT;
   private missingConsentMessageCount: number = 0;
   private MISSING_CONSENT_DISPLAY_AMMOUNT: number = 2;
-  private firstWorkspaceFlag: boolean = false;
 
   private async generalError(): Promise<void> {
     const { msg: errorMsg, button: tryButton } = deepCodeMessages.error;

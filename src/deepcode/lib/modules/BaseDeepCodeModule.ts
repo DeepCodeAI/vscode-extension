@@ -9,6 +9,7 @@ import DeepCodeWorkspaceFoldersWatcher from "../watchers/WorkspaceFoldersWatcher
 import DeepCodeEditorsWatcher from "../watchers/EditorsWatcher";
 import DeepCodeSettingsWatcher from "../watchers/DeepCodeSettingsWatcher";
 import DeepCodeErrorhandler from "../errorHandler/DeepCodeErrorHandler";
+import DeepCodeFeedbackReminder from "../feedbackReminder/DeepCodeFeedbackReminder";
 
 export default class BaseDeepCodeModule {
   public config: DeepCode.DeepCodeConfig;
@@ -26,6 +27,7 @@ export default class BaseDeepCodeModule {
   public editorsWatcher: DeepCode.DeepCodeWatcherInterface;
   public settingsWatcher: DeepCode.DeepCodeWatcherInterface;
   public errorHandler: DeepCode.ErrorHandlerInterface;
+  public feedbackReminder: DeepCode.DeepCodeWatcherInterface;
 
   constructor() {
     this.config = new DeepCodeConfig().deepcode;
@@ -43,5 +45,6 @@ export default class BaseDeepCodeModule {
     this.editorsWatcher = new DeepCodeEditorsWatcher();
     this.settingsWatcher = new DeepCodeSettingsWatcher();
     this.errorHandler = new DeepCodeErrorhandler();
+    this.feedbackReminder = new DeepCodeFeedbackReminder();
   }
 }

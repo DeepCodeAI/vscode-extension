@@ -4,5 +4,7 @@ export const stateNames: DeepCode.StateIitemsInterface = {
   confirmedDownload: "confirmedDownload",
   isLoggedIn: "isLoggedIn",
   accountType: "accountType",
-  sessionToken: "sessionToken"
+  sessionToken: "sessionToken",
+  installTimeStamp: "installTimeStamp",
+  feedbackData: "feedbackData"
 };

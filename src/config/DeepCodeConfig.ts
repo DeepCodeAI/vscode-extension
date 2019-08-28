@@ -11,6 +11,7 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
   private createExtensionConfig() {
     const extensionConfig = {
       deepcodeUrl: "https://www.deepcode.ai/",
+      vscodeMarketplaceUrl: "https://marketplace.visualstudio.com",
       get baseApiUrl() {
         return `${this.deepcodeUrl}publicapi`;
       },
@@ -45,6 +46,11 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
         return `${
           this.deepcodeUrl
         }cloud-login?redirectURL=%2Fapp%2F~platform/account`;
+      },
+      getMarketplaceExtensionFeedbackUrl(extensionId: string): string {
+        return `${
+          this.vscodeMarketplaceUrl
+        }/items?itemName=${extensionId}&ssr=false#review-details`;
       }
     };
     return extensionConfig;

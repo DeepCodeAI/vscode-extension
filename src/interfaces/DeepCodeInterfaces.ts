@@ -115,6 +115,7 @@ namespace DeepCode {
     getDifAnalysisUrl: Function;
     errorUrl: string;
     configureAccountUrl: string;
+    getMarketplaceExtensionFeedbackUrl: Function;
   }
   export interface ExtensionConfigInterface {
     deepcode: DeepCodeConfig;
@@ -182,6 +183,7 @@ namespace DeepCode {
     workspacesWatcher: DeepCodeWatcherInterface;
     settingsWatcher: DeepCodeWatcherInterface;
     errorHandler: ErrorHandlerInterface;
+    feedbackReminder: DeepCodeWatcherInterface;
     activate?(context: ExtensionContext): void;
     startExtension?(): any;
     cancelFirstSaveFlag(): void;

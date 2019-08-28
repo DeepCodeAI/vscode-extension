@@ -8,6 +8,7 @@ export default class DeepCodeLib extends BundlesModule {
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);
     await this.activateExtensionStartActions();
+    this.feedbackReminder.activate(this);
   }
   public async activateExtensionStartActions(): Promise<void> {
     // check if user is loggedIn and has confirmed uploading code

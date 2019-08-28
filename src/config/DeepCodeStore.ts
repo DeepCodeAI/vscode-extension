@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import * as nodeFs from "fs";
 import * as path from "path";
 import DeepCode from "../interfaces/DeepCodeInterfaces";
@@ -8,6 +9,7 @@ import {
   STATUSFILE_NAME,
   DEEPCODE_NAME
 } from "../deepcode/constants/general";
+import { defaultFeedbackData } from "../deepcode/lib/feedbackReminder/feedbackHelpers";
 
 class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
   private state: Memento | any = {};
@@ -26,7 +28,11 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
         this.state.get(stateNames.confirmedDownload),
 
       getSessionToken: (): string | undefined =>
-        this.state.get(stateNames.sessionToken)
+        this.state.get(stateNames.sessionToken),
+      getIstallTimeStamp: (): string | undefined =>
+        this.state.get(stateNames.installTimeStamp),
+      getFeedbackData: (): { [key: string]: any } | undefined =>
+        this.state.get(stateNames.feedbackData)
     };
   }
 
@@ -39,7 +45,11 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
       setConfirmUploadStatus: (status: boolean): Thenable<void> =>
         this.state.update(stateNames.confirmedDownload, status),
       setSessionToken: (token: string): Thenable<void> =>
-        this.state.update(stateNames.sessionToken, token)
+        this.state.update(stateNames.sessionToken, token),
+      setInstallTimeStamp: (timestamp: string): Thenable<void> =>
+        this.state.update(stateNames.installTimeStamp, timestamp),
+      setFeedbackData: (updatedData: { [key: string]: any }): Thenable<void> =>
+        this.state.update(stateNames.feedbackData, updatedData)
     };
   }
 
@@ -48,6 +58,8 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
     this.actions.setSessionToken("");
     this.actions.setConfirmUploadStatus(false);
     this.actions.setAccountType("");
+    this.actions.setInstallTimeStamp("");
+    this.actions.setFeedbackData({});
   }
 
   private manageExtensionStatus(): void {
@@ -63,6 +75,10 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
       if (extensionStatus === INSTALL_STATUS.justInstalled) {
         this.cleanGlobalStore();
         nodeFs.writeFileSync(statusFilePath, INSTALL_STATUS.installed);
+        this.actions.setInstallTimeStamp(`${Date.now()}`);
+        this.actions.setFeedbackData({
+          ...defaultFeedbackData
+        });
       }
     }
   }
