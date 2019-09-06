@@ -1,6 +1,7 @@
 import DeepCode from "../interfaces/DeepCodeInterfaces";
 import { ExtensionContext, Memento } from "vscode";
 import { stateNames } from "../deepcode/constants/stateNames";
+import { defaultFeedbackData } from "../deepcode/lib/feedbackReminder/feedbackHelpers";
 
 class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
   private globalState: Memento | any = {};
@@ -85,6 +86,10 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
     this.actions = { ...this.createStateActions() };
     if (!this.selectors.getConfirmUploadStatus()) {
       this.actions.setConfirmUploadStatus();
+    }
+    const feedbackData = this.selectors.getFeedbackData();
+    if (!feedbackData || !Object.keys(feedbackData).length) {
+      this.actions.setFeedbackData(defaultFeedbackData);
     }
   }
 }

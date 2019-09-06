@@ -18,6 +18,7 @@ export default class DeepCodeLib extends BundlesModule {
     this.workspacesWatcher.activate(this);
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);
+    this.feedbackReminder.activate(this);
   }
 
   public async activateActions(): Promise<void> {

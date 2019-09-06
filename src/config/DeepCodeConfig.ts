@@ -1,7 +1,4 @@
-import * as vscode from "vscode";
 import DeepCode from "../interfaces/DeepCodeInterfaces";
-import { DEFAULT_DEEPCODE_ENDPOINT } from "../deepcode/constants/general";
-import { DEEPCODE_CLOUD_BACKEND } from "../deepcode/constants/settings";
 
 class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
   public deepcode: DeepCode.DeepCodeConfig;

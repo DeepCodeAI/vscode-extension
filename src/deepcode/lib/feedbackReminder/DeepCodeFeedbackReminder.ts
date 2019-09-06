@@ -108,12 +108,7 @@ class DeepCodeFeedbackReminder implements DeepCode.DeepCodeWatcherInterface {
     const feedbackData = extension.store.selectors.getFeedbackData();
 
     if (this.checkIfFeedbackDataExists(feedbackData)) {
-      const {
-        isFeedbackPageOpened,
-        warningsChecked,
-        refusedCount,
-        timeLimit
-      } = feedbackData;
+      const { isFeedbackPageOpened, refusedCount, timeLimit } = feedbackData;
       if (
         isFeedbackPageOpened ||
         +refusedCount >= FEEDBACK_REFUSE_COUNT_LIMIT
@@ -121,19 +116,12 @@ class DeepCodeFeedbackReminder implements DeepCode.DeepCodeWatcherInterface {
         return;
       }
 
+      this.watchIssuesSelectionsBeforeFeedback(extension);
+
       this.createFeedbackUrl(extension);
       const installTimestamp = extension.store.selectors.getIstallTimeStamp();
       if (installTimestamp && Date.now() >= +installTimestamp + timeLimit) {
         await this.showFeedbackMessage(extension);
-      } else {
-        const latestFeedbackData = extension.store.selectors.getFeedbackData();
-        if (
-          !latestFeedbackData.isFeedbackPageOpened &&
-          warningsChecked < WARNINGS_ISSUES_CHECK_LIMIT &&
-          +latestFeedbackData.refusedCount < FEEDBACK_REFUSE_COUNT_LIMIT
-        ) {
-          this.watchIssuesSelectionsBeforeFeedback(extension);
-        }
       }
     }
   }
