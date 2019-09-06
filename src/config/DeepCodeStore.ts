@@ -1,15 +1,6 @@
-import * as vscode from "vscode";
-import * as nodeFs from "fs";
-import * as path from "path";
 import DeepCode from "../interfaces/DeepCodeInterfaces";
 import { ExtensionContext, Memento } from "vscode";
 import { stateNames } from "../deepcode/constants/stateNames";
-import {
-  INSTALL_STATUS,
-  STATUSFILE_NAME,
-  DEEPCODE_NAME
-} from "../deepcode/constants/general";
-import { defaultFeedbackData } from "../deepcode/lib/feedbackReminder/feedbackHelpers";
 
 class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
   private globalState: Memento | any = {};
@@ -37,17 +28,13 @@ class DeepCodeStore implements DeepCode.ExtensionStoreInterface {
         return workspaceConfirms[folderPath];
       },
       getSessionToken: (): string | undefined =>
-<<<<<<< HEAD
         this.globalState.get(stateNames.sessionToken),
       getBackendConfigStatus: (): string | undefined =>
-        this.globalState.get(stateNames.isBackendConfigured)
-=======
-        this.state.get(stateNames.sessionToken),
+        this.globalState.get(stateNames.isBackendConfigured),
       getIstallTimeStamp: (): string | undefined =>
-        this.state.get(stateNames.installTimeStamp),
+        this.globalState.get(stateNames.installTimeStamp),
       getFeedbackData: (): { [key: string]: any } | undefined =>
-        this.state.get(stateNames.feedbackData)
->>>>>>> feedback-implementaion
+        this.globalState.get(stateNames.feedbackData)
     };
   }
 

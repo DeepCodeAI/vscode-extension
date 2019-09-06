@@ -9,7 +9,6 @@ import {
   TextDocument
 } from "vscode";
 import { StatusCodeError } from "request-promise/errors";
-import { INSTALL_STATUS } from "../deepcode/constants/general";
 
 namespace DeepCode {
   export type userStateItemType = string | number | boolean | undefined;
