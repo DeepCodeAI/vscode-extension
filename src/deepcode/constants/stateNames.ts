@@ -5,5 +5,7 @@ export const stateNames: DeepCode.StateIitemsInterface = {
   isLoggedIn: "isLoggedIn",
   accountType: "accountType",
   sessionToken: "sessionToken",
-  isBackendConfigured: "isBackendConfigured"
+  isBackendConfigured: "isBackendConfigured",
+  installTimeStamp: "installTimeStamp",
+  feedbackData: "feedbackData"
 };

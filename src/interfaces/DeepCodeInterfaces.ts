@@ -118,6 +118,7 @@ namespace DeepCode {
     configureAccountUrl: string;
     termsConditionsUrl: string;
     changeDeepCodeUrl: Function;
+    getMarketplaceExtensionFeedbackUrl: Function;
   }
   export interface ExtensionConfigInterface {
     deepcode: DeepCodeConfig;
@@ -186,6 +187,7 @@ namespace DeepCode {
     workspacesWatcher: DeepCodeWatcherInterface;
     settingsWatcher: DeepCodeWatcherInterface;
     errorHandler: ErrorHandlerInterface;
+    feedbackReminder: DeepCodeWatcherInterface;
     activate?(context: ExtensionContext): void;
     preActivateActions(): Promise<void>;
     activateActions(): Promise<void>;

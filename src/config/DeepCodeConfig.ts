@@ -12,6 +12,7 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
   private createExtensionConfig() {
     const extensionConfig = {
       deepcodeUrl: "",
+      vscodeMarketplaceUrl: "https://marketplace.visualstudio.com",
       get baseApiUrl() {
         return `${this.deepcodeUrl}publicapi`;
       },
@@ -50,6 +51,9 @@ class DeepCodeConfig implements DeepCode.ExtensionConfigInterface {
       },
       changeDeepCodeUrl: (url: string): void => {
         this.deepcode.deepcodeUrl = url;
+      },
+      getMarketplaceExtensionFeedbackUrl(extensionId: string): string {
+        return `${this.vscodeMarketplaceUrl}/items?itemName=${extensionId}&ssr=false#review-details`;
       }
     };
     return extensionConfig;
