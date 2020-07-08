@@ -12,6 +12,7 @@ import {
 } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
+import { ExclusionFilter } from "../utils/ignoreUtils";
 
 // The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
 // TODO what exactly is transmitted eventually and what is a good exact limit?
@@ -31,22 +32,6 @@ export const readFile = async (filePath: string): Promise<string> => {
 export const getFileNameFromPath = (path: string): string => {
   const splittedPath = path.split("/");
   return splittedPath[splittedPath.length - 1];
-};
-
-// Count all files in directory (recursively, anologously to createListOfDirFilesHashes())
-export const scanFileCountFromDirectory = async (folderPath: string) => {
-  const dirContent: string[] = await fs.readdir(folderPath);
-  let subFileCount = 0;
-
-  for (const name of dirContent) {
-    const fullChildPath = nodePath.join(folderPath, name);
-    if (fs.lstatSync(fullChildPath).isDirectory()) {
-      subFileCount += await scanFileCountFromDirectory(fullChildPath);
-    } else {
-      ++subFileCount;
-    }
-  }
-  return subFileCount;
 };
 
 export let filesProgress = { processed: 0, total: 0 };
@@ -69,18 +54,14 @@ export const acceptFileToBundle = (
 
 export const isFileChangingBundle = (name: string): boolean => {
   name = nodePath.basename(name);
-  if (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME) {
-    return true;
-  }
-  return false;
+  return (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME);
 };
 
 export const parseGitignoreFile = async (
   filePath: string
 ): Promise<string[]> => {
-  let gitignoreContent: string | string[] = await readFile(filePath);
-  gitignoreContent = gitignoreContent.split("\n").filter(file => !!file);
-  return gitignoreContent;
+  const gitignoreContent: string | string[] = await readFile(filePath);
+  return gitignoreContent.split("\n").filter(file => !!file);
 };
 
 export const createMissingFilesPayloadUtil = async (
@@ -142,19 +123,6 @@ export const compareFileChanges = async (
     throw err;
   }
   return response;
-};
-
-export const processServerFilesFilterList = (
-  filterList: DeepCode.AllowedServerFilterListInterface
-): DeepCode.AllowedServerFilterListInterface => {
-  const { configFiles } = filterList;
-  if (configFiles) {
-    const processedConfigFiles = configFiles.map((item: string) =>
-      item.slice(1)
-    );
-    return { ...filterList, configFiles: processedConfigFiles };
-  }
-  return filterList;
 };
 
 export const processPayloadSize = (

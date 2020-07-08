@@ -6,7 +6,6 @@ import DeepCode from "../../interfaces/DeepCodeInterfaces";
 import { ExclusionRule, ExclusionFilter } from "../utils/ignoreUtils";
 import {
   acceptFileToBundle,
-  scanFileCountFromDirectory,
   parseGitignoreFile,
 } from "../utils/filesUtils";
 import { DCIGNORE_FILENAME, GITIGNORE_FILENAME, EXCLUDED_NAMES } from "../constants/filesConstants";
@@ -52,7 +51,7 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
   for (const name of dirContent) {
     const fullChildPath = nodePath.join(dirPath, name);
 
-    if (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME) {
+    if ([GITIGNORE_FILENAME, DCIGNORE_FILENAME].includes(name)) {
       // We've found a ignore file.
       const exclusionRule = new ExclusionRule();
       exclusionRule.addExclusions(
@@ -89,7 +88,8 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
           if (percentDoneIncrement > 0) {
             progress.progressWindow.report({
               increment: percentDoneIncrement,
-              message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)`
+              // message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)`
+              message: `${progress.filesProcessed}`
             });
             progress.percentDone = currentPercentDone;
           }
@@ -174,10 +174,6 @@ export const startFilesUpload = async(
     progress: finalProgress
   } = await window.withProgress(progressOptions, async (progress) => {
     // Get a directory size overview for progress reporting
-    let count = await scanFileCountFromDirectory(folderPath);
-
-    console.warn(`Checking ${count} files...`);
-
     progress.report({ increment: 1 });
 
     // Filter, read and hash all files
@@ -189,7 +185,7 @@ export const startFilesUpload = async(
       progress: {
         // progress data
         filesProcessed: 0,
-        totalFiles: count,
+        totalFiles: 100,
         percentDone: 0,
         progressWindow: progress
       }

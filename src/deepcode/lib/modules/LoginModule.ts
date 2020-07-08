@@ -38,8 +38,8 @@ class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface 
     }
   }
 
-  public checkSession(): Promise<boolean> | boolean {
-    if (!this.token) return false;
+  public checkSession(): Promise<boolean> {
+    if (!this.token) return Promise.resolve(false);
     return http.checkSession(this.baseURL, this.token);
   }
 
