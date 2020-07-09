@@ -33,22 +33,7 @@ interface CreateListOfFiles {
   progress: ProgressInterface;
 }
 
-// Helper function - read files and count progress
-export const createListOfDirFiles = async (options: CreateListOfFiles) => {
-  let {
-    serverFilesFilterList,
-    folderPath,
-    path,
-    exclusionFilter,
-    progress
-  } = options;
-
-  let list: string[] = [];
-  const dirPath = path || folderPath;
-  const dirContent: string[] = await fs.readdir(dirPath);
-  const relativeDirPath = nodePath.relative(folderPath, dirPath);
-  
-  // First look for .gitignore and .dcignore files.
+const checkForIgnoreFiles = async (dirContent: string[], dirPath: string, relativeDirPath: string, exclusionFilter: ExclusionFilter  )=>{
   for (const name of dirContent) {
     const fullChildPath = nodePath.join(dirPath, name);
 
@@ -64,6 +49,48 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
       exclusionFilter.addExclusionRule(exclusionRule);
     }
   }
+  return exclusionFilter;
+};
+
+const updateProgress = (progress: ProgressInterface ) =>{
+    // Update progress window on processed (non-directory) files
+    ++progress.filesProcessed;
+
+    // This check is just to throttle the reporting process
+    if (progress.filesProcessed % 100 === 0) {
+      const currentPercentDone = Math.round(
+        (progress.filesProcessed / progress.totalFiles) * 100
+      );
+      const percentDoneIncrement =
+        currentPercentDone - progress.percentDone;
+
+      if (percentDoneIncrement > 0) {
+        progress.progressWindow.report({
+          increment: percentDoneIncrement,
+          message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)`
+        });
+        progress.percentDone = currentPercentDone;
+      }
+    }
+    return progress;
+};
+
+// Helper function - read files and count progress
+export const createListOfDirFiles = async (options: CreateListOfFiles) => {
+  let {
+    serverFilesFilterList,
+    folderPath,
+    path,
+    exclusionFilter,
+    progress
+  } = options;
+
+  let list: string[] = [];
+  const dirPath = path || folderPath;
+  const dirContent: string[] = await fs.readdir(dirPath);
+  const relativeDirPath = nodePath.relative(folderPath, dirPath);
+  
+  exclusionFilter = await checkForIgnoreFiles(dirContent, dirPath, relativeDirPath, exclusionFilter);
 
   // Iterate through directory after updating exclusion rules.
   for (const name of dirContent) {
@@ -73,29 +100,10 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
       const fileStats = fs.statSync(fullChildPath);
       const isDirectory = fileStats.isDirectory();
       const isFile = fileStats.isFile();
-
       if (isFile) {
-        // Update progress window on processed (non-directory) files
-        ++progress.filesProcessed;
-
-        // This check is just to throttle the reporting process
-        if (progress.filesProcessed % 100 === 0) {
-          const currentPercentDone = Math.round(
-            (progress.filesProcessed / progress.totalFiles) * 100
-          );
-          const percentDoneIncrement =
-            currentPercentDone - progress.percentDone;
-
-          if (percentDoneIncrement > 0) {
-            progress.progressWindow.report({
-              increment: percentDoneIncrement,
-              message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)`
-            });
-            progress.percentDone = currentPercentDone;
-          }
-        }
+        progress = updateProgress(progress);
       }
-
+      
       if (exclusionFilter.excludes(relativeChildPath)) {
         continue;
       }
