@@ -9,17 +9,13 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 
 class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
   private changedFilesList: Array<string> = [];
-  private watcher: vscode.FileSystemWatcher;
+  private watcher: vscode.FileSystemWatcher | null = null;
   private FILES_TO_SAVE_LIST_FIRST_ELEMENT: number = 1;
   private filesForUpdatingServerBundle: {
     [key: string]: Array<{
       [key: string]: string;
     }>
   } = {};
-
-  constructor() {
-    this.watcher = vscode.workspace.createFileSystemWatcher("**/*.*");
-  }
 
   private emptyChangedFilesLists(): void {
     // clear files lists
@@ -183,8 +179,20 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
   }
 
   public activate(extension: DeepCode.ExtensionInterface): void {
-    const { created, modified, deleted } = FILE_CURRENT_STATUS;
+    if (!Object.keys(extension.serverFilesFilterList).length) {
+      console.error('Empty watch list');
+      return;
+    }
 
+    const watchFiles = [
+      ...(extension.serverFilesFilterList.extensions || []).map(e => `*${e}`),
+      ...(extension.serverFilesFilterList.configFiles || [])
+    ];
+    
+    const globPattern: vscode.GlobPattern = `**/\{${watchFiles.join(',')}\}`;
+    this.watcher = vscode.workspace.createFileSystemWatcher(globPattern);
+
+    const { created, modified, deleted } = FILE_CURRENT_STATUS;
     this.watcher.onDidChange((documentUri: vscode.Uri) => {
       this.filesChangesHandler(documentUri.fsPath, extension, modified);
     });

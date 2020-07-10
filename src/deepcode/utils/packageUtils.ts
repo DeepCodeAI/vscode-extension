@@ -6,7 +6,6 @@ import DeepCode from "../../interfaces/DeepCodeInterfaces";
 import { ExclusionRule, ExclusionFilter } from "../utils/ignoreUtils";
 import {
   acceptFileToBundle,
-  scanFileCountFromDirectory,
   parseGitignoreFile,
 } from "../utils/filesUtils";
 import { DCIGNORE_FILENAME, GITIGNORE_FILENAME, EXCLUDED_NAMES } from "../constants/filesConstants";
@@ -34,7 +33,7 @@ interface CreateListOfFiles {
 }
 
 // Helper function - read files and count progress
-export const createListOfDirFiles = async (options: CreateListOfFiles): 
+export const createListOfDirFiles = async (options: CreateListOfFiles):
 Promise<{foundIgnoreFile: boolean, progress: ProgressInterface, bundle: string[]}> => {
   let {
     serverFilesFilterList,
@@ -49,12 +48,12 @@ Promise<{foundIgnoreFile: boolean, progress: ProgressInterface, bundle: string[]
   const dirPath = path || folderPath;
   const dirContent: string[] = await fs.readdir(dirPath);
   const relativeDirPath = nodePath.relative(folderPath, dirPath);
-  
+
   // First look for .gitignore and .dcignore files.
   for (const name of dirContent) {
     const fullChildPath = nodePath.join(dirPath, name);
 
-    if (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME) {
+    if ([GITIGNORE_FILENAME, DCIGNORE_FILENAME].includes(name)) {
       foundIgnoreFile = true;
       // We've found a ignore file.
       const exclusionRule = new ExclusionRule();
@@ -92,7 +91,8 @@ Promise<{foundIgnoreFile: boolean, progress: ProgressInterface, bundle: string[]
           if (percentDoneIncrement > 0) {
             progress.progressWindow.report({
               increment: percentDoneIncrement,
-              message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)`
+              // message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)`
+              message: `${progress.filesProcessed}`
             });
             progress.percentDone = currentPercentDone;
           }
@@ -180,10 +180,6 @@ export const startFilesUpload = async(
     foundIgnoreFile,
   } = await window.withProgress(progressOptions, async (progress) => {
     // Get a directory size overview for progress reporting
-    let count = await scanFileCountFromDirectory(folderPath);
-
-    console.warn(`Checking ${count} files...`);
-
     progress.report({ increment: 1 });
 
     // Filter, read and hash all files
@@ -195,7 +191,7 @@ export const startFilesUpload = async(
       progress: {
         // progress data
         filesProcessed: 0,
-        totalFiles: count,
+        totalFiles: 100,
         percentDone: 0,
         progressWindow: progress
       }
@@ -210,7 +206,7 @@ export const startFilesUpload = async(
   }
 
   return {
-    foundIgnoreFile, 
+    foundIgnoreFile,
     bundle: finalBundle // final window result
   };
 };

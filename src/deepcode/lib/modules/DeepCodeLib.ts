@@ -6,7 +6,7 @@ import BundlesModule from "./BundlesModule";
 export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepCodeLibInterface {
   
   public activateAll(): void {
-    this.filesWatcher.activate(this);
+    // this.filesWatcher.activate(this);
     this.workspacesWatcher.activate(this);
     this.editorsWatcher.activate(this);
     this.settingsWatcher.activate(this);

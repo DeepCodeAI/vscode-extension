@@ -4,7 +4,7 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import { IQueueAnalysisCheckResult } from "@deepcode/tsc";
 import { window, ProgressLocation, Progress } from "vscode";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
-import { processServerFilesFilterList, createDCIgnore } from "../../utils/filesUtils";
+import { createDCIgnore } from "../../utils/filesUtils";
 import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
 import { startFilesUpload } from "../../utils/packageUtils";
 import { BUNDLE_EVENTS } from "../../constants/events";
@@ -134,14 +134,13 @@ class BundlesModule extends LoginModule
 
   // procesing filter list of files, acceptable for server
   public async createFilesFilterList(): Promise<void> {
-    const { extensions, configFiles } = await http.getFilters(this.baseURL, this.token);
-    const processedFilters = processServerFilesFilterList({ extensions, configFiles });
-    this.serverFilesFilterList = { ...processedFilters };
+    this.serverFilesFilterList = await http.getFilters(this.baseURL, this.token);
   }
 
   public async performBundlesActions(path: string): Promise<void> {
     if (!Object.keys(this.serverFilesFilterList).length) {
       await this.createFilesFilterList();
+      this.filesWatcher.activate(this);
 
       if (!Object.keys(this.serverFilesFilterList).length) {
         return;
