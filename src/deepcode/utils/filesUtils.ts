@@ -1,5 +1,6 @@
 import * as crypto from "crypto";
 import * as nodePath from "path";
+import * as vscode from "vscode";
 import { Buffer } from "buffer";
 import { fs } from "mz";
 import {
@@ -212,4 +213,26 @@ export const splitPayloadIntoChunks = (
   }
 
   return { chunks: true, payload: chunkedPayload };
+};
+
+export const createDCIgnore = async (
+  defaultDcIgnore: string | undefined,
+  path: string,
+  custom: boolean
+) => {
+  console.log("createDCIgnore");
+  const customIgnore = [
+    "# Write glob rules for ignored files.",
+    "# Check syntax on https://deepcode.freshdesk.com/support/solutions/articles/60000531055-how-can-i-ignore-files-or-directories-",
+    "# Check examples on https://github.com/github/gitignore"
+  ].join("\n");
+  const content: Buffer | Uint8Array = custom || !defaultDcIgnore ? 
+    Buffer.from(customIgnore, 'utf8') :
+    await vscode.workspace.fs.readFile(vscode.Uri.file(defaultDcIgnore));
+  
+  const filePath = `${path}/.dcignore`;
+  const openPath = vscode.Uri.file(filePath);
+  await vscode.workspace.fs.writeFile(openPath, content);
+  const doc = await vscode.workspace.openTextDocument(openPath);
+  vscode.window.showTextDocument(doc);
 };

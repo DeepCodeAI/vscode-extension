@@ -12,6 +12,7 @@ import { IDE_NAME } from "../../constants/general";
 
 export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleInterface {
   public store: DeepCode.ExtensionStoreInterface;
+  public context: vscode.ExtensionContext | undefined;
   public currentWorkspacePath: string;
   public workspacesPaths: Array<string>;
   public hashesBundles: DeepCode.HashesBundlesInterface;

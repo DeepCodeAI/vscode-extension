@@ -4,7 +4,7 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import { IQueueAnalysisCheckResult } from "@deepcode/tsc";
 import { window, ProgressLocation, Progress } from "vscode";
 import { deepCodeMessages } from "../../messages/deepCodeMessages";
-import { processServerFilesFilterList } from "../../utils/filesUtils";
+import { processServerFilesFilterList, createDCIgnore } from "../../utils/filesUtils";
 import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
 import { startFilesUpload } from "../../utils/packageUtils";
 import { BUNDLE_EVENTS } from "../../constants/events";
@@ -95,6 +95,19 @@ class BundlesModule extends LoginModule
     }
   }
 
+  public async askDCIgnore(path: string): Promise<void> {
+    const { dcignoreNotFound } = deepCodeMessages;
+    let pressedButton: string | undefined;
+    
+    pressedButton = await vscode.window.showInformationMessage(dcignoreNotFound.msg, dcignoreNotFound.default, dcignoreNotFound.custom, dcignoreNotFound.ignore);
+    
+    console.log("pre createDCIgnore", pressedButton, pressedButton !== dcignoreNotFound.ignore);
+    if (pressedButton && pressedButton !== dcignoreNotFound.ignore) {
+      const defaultDcIgnore = this.context && `${this.context.extensionPath}/dcignore/default.dcignore`;
+      await createDCIgnore(defaultDcIgnore, path, pressedButton === dcignoreNotFound.custom);
+    }
+  }
+
   // processing workspaces
   public updateCurrentWorkspacePath(newWorkspacePath: string): void {
     this.currentWorkspacePath = newWorkspacePath;
@@ -140,8 +153,10 @@ class BundlesModule extends LoginModule
       return
     }
 
-    this.files = await startFilesUpload(path, this.serverFilesFilterList);
+    const { bundle, foundIgnoreFile } = await startFilesUpload(path, this.serverFilesFilterList);
     
+    this.files = bundle;
+
     const progressOptions = {
       location: ProgressLocation.Notification,
       title: deepCodeMessages.analysisProgress.msg,
@@ -197,6 +212,10 @@ class BundlesModule extends LoginModule
 
       await http.analyse(this.baseURL, this.token, path, this.files).catch(err => {});
     });
+
+    if (!foundIgnoreFile) {
+      await this.askDCIgnore(path);
+    }
   }
 
   private async createSingleHashBundle(

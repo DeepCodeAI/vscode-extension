@@ -34,7 +34,8 @@ interface CreateListOfFiles {
 }
 
 // Helper function - read files and count progress
-export const createListOfDirFiles = async (options: CreateListOfFiles) => {
+export const createListOfDirFiles = async (options: CreateListOfFiles): 
+Promise<{foundIgnoreFile: boolean, progress: ProgressInterface, bundle: string[]}> => {
   let {
     serverFilesFilterList,
     folderPath,
@@ -43,6 +44,7 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
     progress
   } = options;
 
+  let foundIgnoreFile: boolean = false;
   let list: string[] = [];
   const dirPath = path || folderPath;
   const dirContent: string[] = await fs.readdir(dirPath);
@@ -53,6 +55,7 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
     const fullChildPath = nodePath.join(dirPath, name);
 
     if (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME) {
+      foundIgnoreFile = true;
       // We've found a ignore file.
       const exclusionRule = new ExclusionRule();
       exclusionRule.addExclusions(
@@ -127,7 +130,8 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
       if (isDirectory) {
         const {
           bundle: subBundle,
-          progress: subProgress
+          progress: subProgress,
+          foundIgnoreFile: subFoundIgnoreFile
         } = await createListOfDirFiles({
           serverFilesFilterList,
           folderPath,
@@ -135,7 +139,7 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
           exclusionFilter,
           progress
         });
-
+        foundIgnoreFile = foundIgnoreFile || subFoundIgnoreFile;
         progress = subProgress;
         list.push(...subBundle);
       }
@@ -150,14 +154,15 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
 
   return {
     bundle: list,
-    progress
+    progress,
+    foundIgnoreFile,
   };
 };
 
 export const startFilesUpload = async(
   folderPath: string,
   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
-): Promise<string[]> => {
+): Promise<{foundIgnoreFile: boolean, bundle: string[]}> => {
   const exclusionFilter = new ExclusionFilter();
   const rootExclusionRule = new ExclusionRule();
   rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
@@ -171,7 +176,8 @@ export const startFilesUpload = async(
 
   const {
     bundle: finalBundle,
-    progress: finalProgress
+    progress: finalProgress,
+    foundIgnoreFile,
   } = await window.withProgress(progressOptions, async (progress) => {
     // Get a directory size overview for progress reporting
     let count = await scanFileCountFromDirectory(folderPath);
@@ -199,6 +205,12 @@ export const startFilesUpload = async(
   });
 
   console.warn(`Processed ${Object.keys(finalBundle).length} files`);
+  if (!foundIgnoreFile) {
+    console.warn(`Found no .dcignore or .gitignore file in the directory`);
+  }
 
-  return finalBundle; // final window result
+  return {
+    foundIgnoreFile, 
+    bundle: finalBundle // final window result
+  };
 };

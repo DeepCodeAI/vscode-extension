@@ -9,6 +9,12 @@ export const deepCodeMessages = {
     workspace: "Yes",
     global: "Always yes"
   },
+  dcignoreNotFound: {
+    msg: "No .dcignore was found in this repository, so all the files has been uploaded. Do you want to add a .dcignore file?",
+    ignore: "Ignore",
+    default: "Add default",
+    custom: "Add custom"
+  },
   error: {
     msg: "DeepCode encountered a problem.",
     button: "Restart"

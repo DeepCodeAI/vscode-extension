@@ -10,6 +10,7 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
   public activate(context: vscode.ExtensionContext): void {
     this.store.createStore(context);
     this.statusBarItem.show();
+    this.context = context;
 
     context.subscriptions.push(
       vscode.commands.registerCommand(
