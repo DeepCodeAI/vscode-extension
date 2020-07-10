@@ -220,7 +220,6 @@ export const createDCIgnore = async (
   path: string,
   custom: boolean
 ) => {
-  console.log("createDCIgnore");
   const customIgnore = [
     "# Write glob rules for ignored files.",
     "# Check syntax on https://deepcode.freshdesk.com/support/solutions/articles/60000531055-how-can-i-ignore-files-or-directories-",

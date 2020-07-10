@@ -101,7 +101,6 @@ class BundlesModule extends LoginModule
     
     pressedButton = await vscode.window.showInformationMessage(dcignoreNotFound.msg, dcignoreNotFound.default, dcignoreNotFound.custom, dcignoreNotFound.ignore);
     
-    console.log("pre createDCIgnore", pressedButton, pressedButton !== dcignoreNotFound.ignore);
     if (pressedButton && pressedButton !== dcignoreNotFound.ignore) {
       const defaultDcIgnore = this.context && `${this.context.extensionPath}/dcignore/default.dcignore`;
       await createDCIgnore(defaultDcIgnore, path, pressedButton === dcignoreNotFound.custom);
