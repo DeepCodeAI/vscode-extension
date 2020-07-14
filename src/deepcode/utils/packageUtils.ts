@@ -7,12 +7,10 @@ import { ExclusionRule, ExclusionFilter } from "../utils/ignoreUtils";
 import {
   acceptFileToBundle,
   scanFileCountFromDirectory,
-  parseGitignoreFile,
 } from "../utils/filesUtils";
-import { DCIGNORE_FILENAME, GITIGNORE_FILENAME, EXCLUDED_NAMES } from "../constants/filesConstants";
+import { EXCLUDED_NAMES } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
-
-let filesProgress = { processed: 0, total: 0 };
+import * as _ from "lodash";
 
 // The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
 // TODO what exactly is transmitted eventually and what is a good exact limit?
@@ -33,46 +31,26 @@ interface CreateListOfFiles {
   progress: ProgressInterface;
 }
 
-const checkForIgnoreFiles = async (dirContent: string[], dirPath: string, relativeDirPath: string, exclusionFilter: ExclusionFilter  )=>{
-  for (const name of dirContent) {
-    const fullChildPath = nodePath.join(dirPath, name);
+const updateProgress = (progress: ProgressInterface) => {
+  // Update progress window on processed (non-directory) files
+  ++progress.filesProcessed;
 
-    if (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME) {
-      // We've found a ignore file.
-      const exclusionRule = new ExclusionRule();
-      exclusionRule.addExclusions(
-        await parseGitignoreFile(fullChildPath),
-        relativeDirPath
-      );
-      // We need to modify the exclusion rules so we have to create a copy of the exclusionFilter.
-      exclusionFilter = exclusionFilter.copy();
-      exclusionFilter.addExclusionRule(exclusionRule);
-    }
-  }
-  return exclusionFilter;
-};
+  _.throttle(() => {
+    const currentPercentDone = Math.round(
+      (progress.filesProcessed / progress.totalFiles) * 100
+    );
+    const percentDoneIncrement = currentPercentDone - progress.percentDone;
 
-const updateProgress = (progress: ProgressInterface ) =>{
-    // Update progress window on processed (non-directory) files
-    ++progress.filesProcessed;
-
-    // This check is just to throttle the reporting process
-    if (progress.filesProcessed % 100 === 0) {
-      const currentPercentDone = Math.round(
-        (progress.filesProcessed / progress.totalFiles) * 100
-      );
-      const percentDoneIncrement =
-        currentPercentDone - progress.percentDone;
-
-      if (percentDoneIncrement > 0) {
-        progress.progressWindow.report({
-          increment: percentDoneIncrement,
-          message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)`
-        });
-        progress.percentDone = currentPercentDone;
-      }
+    if (percentDoneIncrement > 0) {
+      progress.progressWindow.report({
+        increment: percentDoneIncrement,
+        message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)`,
+      });
+      progress.percentDone = currentPercentDone;
     }
     return progress;
+  }, 100)();
+  return progress;
 };
 
 // Helper function - read files and count progress
@@ -82,15 +60,12 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
     folderPath,
     path,
     exclusionFilter,
-    progress
+    progress,
   } = options;
-
   let list: string[] = [];
   const dirPath = path || folderPath;
   const dirContent: string[] = await fs.readdir(dirPath);
   const relativeDirPath = nodePath.relative(folderPath, dirPath);
-  
-  exclusionFilter = await checkForIgnoreFiles(dirContent, dirPath, relativeDirPath, exclusionFilter);
 
   // Iterate through directory after updating exclusion rules.
   for (const name of dirContent) {
@@ -100,15 +75,12 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
       const fileStats = fs.statSync(fullChildPath);
       const isDirectory = fileStats.isDirectory();
       const isFile = fileStats.isFile();
-      if (isFile) {
-        progress = updateProgress(progress);
-      }
-      
       if (exclusionFilter.excludes(relativeChildPath)) {
         continue;
       }
 
       if (isFile) {
+        progress = { ...updateProgress(progress) };
         if (!acceptFileToBundle(name, serverFilesFilterList)) {
           continue;
         }
@@ -135,13 +107,13 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
       if (isDirectory) {
         const {
           bundle: subBundle,
-          progress: subProgress
+          progress: subProgress,
         } = await createListOfDirFiles({
           serverFilesFilterList,
           folderPath,
           path: `${dirPath}/${name}`,
           exclusionFilter,
-          progress
+          progress,
         });
 
         progress = subProgress;
@@ -151,22 +123,18 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
       continue;
     }
   }
-  filesProgress = {
-    processed: progress.filesProcessed,
-    total: progress.totalFiles
-  };
 
   return {
     bundle: list,
-    progress
+    progress,
   };
 };
 
-export const startFilesUpload = async(
+export const startFilesUpload = async (
   folderPath: string,
   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
 ): Promise<string[]> => {
-  const exclusionFilter = new ExclusionFilter();
+  let exclusionFilter = new ExclusionFilter();
   const rootExclusionRule = new ExclusionRule();
   rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
   exclusionFilter.addExclusionRule(rootExclusionRule);
@@ -174,15 +142,20 @@ export const startFilesUpload = async(
   const progressOptions = {
     location: ProgressLocation.Notification,
     title: deepCodeMessages.fileLoadingProgress.msg,
-    cancellable: false
+    cancellable: false,
   };
 
   const {
     bundle: finalBundle,
-    progress: finalProgress
+    progress: finalProgress,
   } = await window.withProgress(progressOptions, async (progress) => {
     // Get a directory size overview for progress reporting
-    let count = await scanFileCountFromDirectory(folderPath);
+    let { count, updatedExclusionFilter } = await scanFileCountFromDirectory(
+      folderPath,
+      exclusionFilter
+    );
+
+    exclusionFilter = updatedExclusionFilter;
 
     console.warn(`Checking ${count} files...`);
 
@@ -199,8 +172,8 @@ export const startFilesUpload = async(
         filesProcessed: 0,
         totalFiles: count,
         percentDone: 0,
-        progressWindow: progress
-      }
+        progressWindow: progress,
+      },
     });
     progress.report({ increment: 100 });
     return res;

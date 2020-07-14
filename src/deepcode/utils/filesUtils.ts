@@ -8,20 +8,18 @@ import {
   FILE_FORMAT,
   GITIGNORE_FILENAME,
   DCIGNORE_FILENAME,
-  FILE_CURRENT_STATUS
+  FILE_CURRENT_STATUS,
 } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
+import { ExclusionRule, ExclusionFilter } from "../utils/ignoreUtils";
 
 // The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
 // TODO what exactly is transmitted eventually and what is a good exact limit?
 const SAFE_PAYLOAD_SIZE = ALLOWED_PAYLOAD_SIZE / 2; // safe size for requests
 
 export const createFileHash = (file: string): string => {
-  return crypto
-    .createHash(HASH_ALGORITHM)
-    .update(file)
-    .digest(ENCODE_TYPE);
+  return crypto.createHash(HASH_ALGORITHM).update(file).digest(ENCODE_TYPE);
 };
 
 export const readFile = async (filePath: string): Promise<string> => {
@@ -33,20 +31,57 @@ export const getFileNameFromPath = (path: string): string => {
   return splittedPath[splittedPath.length - 1];
 };
 
+export const checkForIgnoreFiles = async (
+  dirContent: string[],
+  dirPath: string,
+  exclusionFilter: ExclusionFilter
+) => {
+  for (const name of dirContent) {
+    const fullChildPath = nodePath.join(dirPath, name);
+
+    if (name === GITIGNORE_FILENAME || name === DCIGNORE_FILENAME) {
+      // We've found a ignore file.
+      const exclusionRule = new ExclusionRule();
+      exclusionRule.addExclusions(
+        await parseGitignoreFile(fullChildPath),
+        dirPath
+      );
+      // We need to modify the exclusion rules so we have to create a copy of the exclusionFilter.
+      exclusionFilter = exclusionFilter.copy();
+      exclusionFilter.addExclusionRule(exclusionRule);
+    }
+  }
+  return exclusionFilter;
+};
+
 // Count all files in directory (recursively, anologously to createListOfDirFilesHashes())
-export const scanFileCountFromDirectory = async (folderPath: string) => {
+export const scanFileCountFromDirectory = async (
+  folderPath: string,
+  exclusionFilter: ExclusionFilter
+) => {
   const dirContent: string[] = await fs.readdir(folderPath);
   let subFileCount = 0;
-
   for (const name of dirContent) {
     const fullChildPath = nodePath.join(folderPath, name);
+    exclusionFilter = await checkForIgnoreFiles(
+      dirContent,
+      folderPath,
+      exclusionFilter
+    );
+
+    if (exclusionFilter.excludes(fullChildPath)) {
+      continue;
+    }
+
     if (fs.lstatSync(fullChildPath).isDirectory()) {
-      subFileCount += await scanFileCountFromDirectory(fullChildPath);
+      subFileCount += await (
+        await scanFileCountFromDirectory(fullChildPath, exclusionFilter)
+      ).count;
     } else {
       ++subFileCount;
     }
   }
-  return subFileCount;
+  return { count: subFileCount, updatedExclusionFilter: exclusionFilter };
 };
 
 export let filesProgress = { processed: 0, total: 0 };
@@ -79,7 +114,7 @@ export const parseGitignoreFile = async (
   filePath: string
 ): Promise<string[]> => {
   let gitignoreContent: string | string[] = await readFile(filePath);
-  gitignoreContent = gitignoreContent.split("\n").filter(file => !!file);
+  gitignoreContent = gitignoreContent.split("\n").filter((file) => !!file);
   return gitignoreContent;
 };
 
@@ -99,7 +134,7 @@ export const createMissingFilesPayloadUtil = async (
       result.push({
         fileHash: createFileHash(fileContent),
         filePath,
-        fileContent
+        fileContent,
       });
     }
   }
@@ -115,7 +150,7 @@ export const compareFileChanges = async (
   const response: { [key: string]: string } = {
     fileHash: "",
     filePath: filePathInsideBundle,
-    status: ""
+    status: "",
   };
   const { same, modified, created, deleted } = FILE_CURRENT_STATUS;
   try {
