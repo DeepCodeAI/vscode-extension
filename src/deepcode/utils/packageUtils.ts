@@ -107,7 +107,6 @@ Promise<{foundIgnoreFile: boolean, progress: ProgressInterface, bundle: string[]
         if (!acceptFileToBundle(name, serverFilesFilterList)) {
           continue;
         }
-
         // Exclude files which are too large to be transferred via http. There is currently no
         // way to process them in multiple chunks
         const fileContentSize = fileStats.size;
@@ -173,13 +172,6 @@ export const startFilesUpload = async(
     title: deepCodeMessages.fileLoadingProgress.msg,
     cancellable: false
   };
-
-  console.log({
-    serverFilesFilterList,
-    folderPath: folderPath,
-    path: folderPath,
-    exclusionFilter: exclusionFilter,
-  });
 
   const {
     bundle: finalBundle,

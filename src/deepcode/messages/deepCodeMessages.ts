@@ -10,10 +10,7 @@ export const deepCodeMessages = {
     global: "Always yes"
   },
   dcignoreNotFound: {
-    msg: [
-      "No dcignore was found in this repository, so all the files has been uploaded. Would you like to add a .dcignore file?",
-      "(You can add one later using the `DeepCode create dcignore` command)"
-    ].join('\n'),
+    msg: "No dcignore was found in this repository, so all the files has been uploaded. Would you like to add a .dcignore file? (You can add one later using the `DeepCode create dcignore` command)",
     ignore: "Don't show again",
     default: "Add default",
     custom: "Add custom"
