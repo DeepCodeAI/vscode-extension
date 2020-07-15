@@ -174,6 +174,13 @@ export const startFilesUpload = async(
     cancellable: false
   };
 
+  console.log({
+    serverFilesFilterList,
+    folderPath: folderPath,
+    path: folderPath,
+    exclusionFilter: exclusionFilter,
+  });
+
   const {
     bundle: finalBundle,
     progress: finalProgress,

@@ -194,6 +194,7 @@ namespace DeepCode {
     token: string;
     setToken(token: string): Promise<void>;
     uploadApproved: boolean;
+    shouldHideDCIgnore: boolean;
     shouldReportErrors: boolean;
     shouldReportEvents: boolean;
     approveUpload(isGlobal: boolean): Promise<void>;

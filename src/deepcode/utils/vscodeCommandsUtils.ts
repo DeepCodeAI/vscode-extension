@@ -4,6 +4,7 @@ import {
   DEEPCODE_START_COMMAND,
   VSCODE_GO_TO_SETTINGS_COMMAND
 } from "../constants/commands";
+import { createDCIgnore } from "./filesUtils"
 
 export const getDeepcodeExtensionId = (): string => {
   const extension = vscode.extensions.all.find(
@@ -15,6 +16,12 @@ export const getDeepcodeExtensionId = (): string => {
 export const openDeepcodeSettingsCommand = (): void => {
   const deepcodeId = getDeepcodeExtensionId();
   vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, deepcodeId);
+};
+
+export const createDCIgnoreCommand = (): void => {
+  const path = vscode.workspace.rootPath;
+  if (!path) return;
+  createDCIgnore(path, false).catch(console.error);
 };
 
 export const startDeepCodeCommand = (): void => {

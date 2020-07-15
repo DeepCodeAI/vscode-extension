@@ -79,6 +79,14 @@ export default class BaseDeepCodeModule implements DeepCode.BaseDeepCodeModuleIn
     await vscode.workspace.getConfiguration('deepcode').update('uploadApproved', true, isGlobal);
   }
 
+  public get shouldHideDCIgnore(): boolean {
+    return !!(vscode.workspace.getConfiguration('deepcode').get('hideDCIgnore'));
+  }
+
+  public async hideDCIgnore(): Promise<void> {
+    await vscode.workspace.getConfiguration('deepcode').update('hideDCIgnore', true, false);
+  }
+
   public get shouldReportErrors(): boolean {
     return !!vscode.workspace.getConfiguration('deepcode').get('yesCrashReport');
   }

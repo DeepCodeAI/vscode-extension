@@ -96,14 +96,15 @@ class BundlesModule extends LoginModule
   }
 
   public async askDCIgnore(path: string): Promise<void> {
+    if (this.shouldHideDCIgnore) return;
     const { dcignoreNotFound } = deepCodeMessages;
     let pressedButton: string | undefined;
-    
     pressedButton = await vscode.window.showInformationMessage(dcignoreNotFound.msg, dcignoreNotFound.default, dcignoreNotFound.custom, dcignoreNotFound.ignore);
     
     if (pressedButton && pressedButton !== dcignoreNotFound.ignore) {
-      const defaultDcIgnore = this.context && `${this.context.extensionPath}/dcignore/default.dcignore`;
-      await createDCIgnore(defaultDcIgnore, path, pressedButton === dcignoreNotFound.custom);
+      await createDCIgnore(path, pressedButton === dcignoreNotFound.custom);
+    } else {
+      await this.hideDCIgnore();
     }
   }
 
