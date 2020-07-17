@@ -6,8 +6,6 @@ export const GITIGNORE_FILENAME = ".gitignore";
 export const DCIGNORE_FILENAME = ".dcignore";
 export const EXCLUDED_NAMES = [
   GIT_FILENAME,
-  GITIGNORE_FILENAME,
-  DCIGNORE_FILENAME,
   ".vscode/"
 ];
 

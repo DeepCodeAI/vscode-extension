@@ -151,9 +151,10 @@ class BundlesModule extends LoginModule
     if (!this.token) {
       return
     }
-
     const { bundle, foundIgnoreFile } = await startFilesUpload(path, this.serverFilesFilterList);
-    
+    const removedFiles = (this.files || []).filter(
+      f => !bundle.includes(f)
+    );
     this.files = bundle;
 
     const progressOptions = {
@@ -209,7 +210,7 @@ class BundlesModule extends LoginModule
         this.serviceAI.removeListeners();
       });
 
-      await http.analyse(this.baseURL, this.token, path, this.files).catch(err => {});
+      await http.analyse(this.baseURL, this.token, path, this.files, removedFiles).catch(err => {});
     });
 
     if (!foundIgnoreFile) {
