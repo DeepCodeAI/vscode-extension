@@ -7,3 +7,4 @@ export const DEEPCODE_START_COMMAND = "deepcode.start";
 export const DEEPCODE_SETTINGS_COMMAND = "deepcode.settings";
 export const DEEPCODE_DCIGNORE_COMMAND = "deepcode.dcignore";
 export const DEEPCODE_IGNORE_ISSUES_COMMAND = "deepcode.ignoreissues";
+export const DEEPCODE_LOGIN = "deepcode.login";

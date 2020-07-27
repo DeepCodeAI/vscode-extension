@@ -42,6 +42,43 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "deepcode",
+          "title": "DeepCode",
+          "icon": "images/icon-sidebar.svg"
+        }
+      ]
+    },
+    "views": {
+      "deepcode": [
+        {
+          "id": "deepcode.views.welcome",
+          "name": "Welcome to DeepCode"
+        },
+        {
+          "id": "deepcode.views.analysis",
+          "name": "Analysis"
+        },
+        {
+          "id": "deepcode.views.support",
+          "name": "Documentation & support"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+          "view": "deepcode.views.welcome",
+          "contents": "Welcome to DeepCode for Visual Studio Code. 👋\n\nLet's start by logging in:\n[Login to DeepCode](command:deepcode.login)\nYou can also [authenticate with a token](command:deepcode.dcignore).",
+          "when": "!deepcode:loggedIn"
+      },
+      {
+          "view": "deepcode.views.analysis",
+          "contents": "To get started with DeepCode's analysis please login first:\n[Login to DeepCode](command:deepcode.login)\nYou can also [authenticate with a token](command:deepcode.dcignore).",
+          "when": "!deepcode:loggedIn"
+      }
+    ],
     "configuration": [
       {
         "title": "DeepCode",
@@ -99,6 +136,10 @@
       {
         "command": "deepcode.dcignore",
         "title": "DeepCode create dcignore"
+      },
+      {
+        "command": "deepcode.login",
+        "title": "DeepCode re-scan"
       }
     ]
   },
@@ -113,7 +154,7 @@
     "@types/glob": "^7.1.2",
     "@types/mocha": "^7.0.2",
     "@types/node": "^14.0.14",
-    "@types/vscode": "^1.46.0",
+    "@types/vscode": "^1.41.0",
     "@types/nock": "^11.1.0",
     "glob": "^7.1.6",
     "mocha": "^8.0.1",

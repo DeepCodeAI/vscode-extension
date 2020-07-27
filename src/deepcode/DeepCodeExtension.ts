@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import DeepCode from "../interfaces/DeepCodeInterfaces";
 import DeepCodeLib from "./lib/modules/DeepCodeLib";
 
-import { DEEPCODE_START_COMMAND, DEEPCODE_SETTINGS_COMMAND, DEEPCODE_DCIGNORE_COMMAND } from "./constants/commands";
+import { DEEPCODE_START_COMMAND, DEEPCODE_SETTINGS_COMMAND, DEEPCODE_DCIGNORE_COMMAND, DEEPCODE_LOGIN } from "./constants/commands";
 import { openDeepcodeSettingsCommand, createDCIgnoreCommand } from "./utils/vscodeCommandsUtils";
 
 class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterface {
@@ -30,6 +30,13 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
       vscode.commands.registerCommand(
         DEEPCODE_DCIGNORE_COMMAND,
         createDCIgnoreCommand
+      )
+    );
+
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        DEEPCODE_LOGIN,
+        this.activateExtensionAnalyzeActions.bind(this)
       )
     );
 
