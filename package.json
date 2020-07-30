@@ -70,7 +70,7 @@
     "viewsWelcome": [
       {
           "view": "deepcode.views.welcome",
-          "contents": "Welcome to DeepCode for Visual Studio Code. 👋\n\nLet's start by logging in:\n[Login to DeepCode](command:deepcode.login)\nYou can also [authenticate with a token](command:deepcode.dcignore).",
+          "contents": "Welcome to DeepCode for Visual Studio Code. 👋\n\nLet's start by logging in:\n[Login to DeepCode](command:deepcode.login)\nYou can also [authenticate with a token](command:deepcode.dcignore) if you've already logged in on [deepcode.ai](https://www.deepcode.ai/cloud-login?utm_source=vsce-package-json).",
           "when": "!deepcode:loggedIn"
       },
       {
