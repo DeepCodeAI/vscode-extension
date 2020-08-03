@@ -2,7 +2,7 @@
   "name": "deepcode",
   "//": "Changing display name requires change in general.ts",
   "displayName": "DeepCode",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "DeepCode finds bugs, security vulnerabilities, performance and API issues based on AI. DeepCode's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, C/C++, JavaScript, Python, TypeScript.",
   "icon": "images/deepCodeLogo.jpg",
   "publisher": "deepcode",
@@ -12,7 +12,7 @@
     "url": "https://github.com/DeepCodeAI/vscode-extension.git"
   },
   "engines": {
-    "vscode": "^1.41.0"
+    "vscode": "^1.46.0"
   },
   "galleryBanner": {
     "color": "#283e55",

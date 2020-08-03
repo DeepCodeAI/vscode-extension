@@ -16,6 +16,7 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
 
   public async activateExtensionAnalyzeActions(): Promise<void> {
 
+    try{
     // First, check logged in or not
     let loggedIn = await this.checkSession();
     if (!loggedIn) {
@@ -57,5 +58,8 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
         await this.errorHandler.processError(this, err);
       }
     }
+  }catch(err) {
+    await this.errorHandler.processError(this, err);
+  }
   }
 }

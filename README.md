@@ -1,5 +1,7 @@
 # DeepCode for Visual Studio Code
 
+[![deepcode](https://www.deepcode.ai/api/gh/badge?key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwbGF0Zm9ybTEiOiJnaCIsIm93bmVyMSI6IkRlZXBDb2RlQUkiLCJyZXBvMSI6InZzY29kZS1leHRlbnNpb24iLCJpbmNsdWRlTGludCI6ZmFsc2UsImF1dGhvcklkIjoxMjQ2OSwiaWF0IjoxNTk2MDk3ODMyfQ.F-7PlnvjMreCceZmgLr_CF1G-S1saMzt1FshPHipAvc)](https://www.deepcode.ai/app/gh/DeepCodeAI/vscode-extension/_/dashboard?utm_content=gh%2FDeepCodeAI%2Fvscode-extension)
+
 **The Visual Studio Code extension provided by <a href="https://www.deepcode.ai/">DeepCode.ai</a> finds bugs and critical vulnerabilities in your code. We support JavaScript and TypeScript, Java, C/C++, and Python.**
 
 # Table of Contents
