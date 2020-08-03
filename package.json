@@ -55,15 +55,15 @@
       "deepcode": [
         {
           "id": "deepcode.views.welcome",
-          "name": "Welcome to DeepCode"
+          "name": "DeepCode Analysis"
         },
         {
           "id": "deepcode.views.analysis",
-          "name": "Analysis"
+          "name": "Actions"
         },
         {
           "id": "deepcode.views.support",
-          "name": "Documentation & support"
+          "name": "Help & feedback"
         }
       ]
     },
