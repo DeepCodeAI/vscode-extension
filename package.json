@@ -69,14 +69,14 @@
     },
     "viewsWelcome": [
       {
-          "view": "deepcode.views.welcome",
-          "contents": "Welcome to DeepCode for Visual Studio Code. 👋\n\nLet's start by logging in:\n[Login to DeepCode](command:deepcode.login)\nYou can also [authenticate with a token](command:deepcode.dcignore) if you've already logged in on [deepcode.ai](https://www.deepcode.ai/cloud-login?utm_source=vsce-package-json).",
-          "when": "!deepcode:loggedIn"
+        "view": "deepcode.views.welcome",
+        "contents": "Welcome to DeepCode for Visual Studio Code. 👋\n\nLet's start by logging in:\n[Login to DeepCode](command:deepcode.login)\nYou can also [authenticate with a token](command:deepcode.dcignore) if you've already logged in on [deepcode.ai](https://www.deepcode.ai/cloud-login?utm_source=vsce-package-json).",
+        "when": "!deepcode:loggedIn"
       },
       {
-          "view": "deepcode.views.analysis",
-          "contents": "To get started with DeepCode's analysis please login first:\n[Login to DeepCode](command:deepcode.login)\nYou can also [authenticate with a token](command:deepcode.dcignore).",
-          "when": "!deepcode:loggedIn"
+        "view": "deepcode.views.analysis",
+        "contents": "[Pause DeepCode for 30 minutes](command:deepcode.login)\n\nYou are currently running DeepCode in a fully automated mode. Need to take control?\n[Switch to manual re-scan mode](command:deepcode.login)\nOnce manual re-scan mode is activated, results will not be updated unless you manully trigger the analysis.\n\nRelaunch the analysis:\n[Re-scan](command:deepcode.login)",
+        "when": "!deepcode:loggedIn"
       }
     ],
     "configuration": [
