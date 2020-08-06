@@ -70,7 +70,17 @@
     "viewsWelcome": [
       {
         "view": "deepcode.views.welcome",
-        "contents": "Welcome to DeepCode for Visual Studio Code. 👋\n\nLet's start by logging in:\n[Login to DeepCode](command:deepcode.login)\nYou can also [authenticate with a token](command:deepcode.dcignore) if you've already logged in on [deepcode.ai](https://www.deepcode.ai/cloud-login?utm_source=vsce-package-json).",
+        "contents": "Welcome to DeepCode for Visual Studio Code. 👋\nLet's start by connecting VS Code with DeepCode:\n[Connect VS Code with DeepCode](command:deepcode.login 'Connect with DeepCode')\n🚀 DeepCode's mission is to find bugs in your Javascript, TypeScript, Python, Java and C/C++ code, fast!\n💬 A VS Code user (Lucas) recently said:\"I'm really crazy about this super simple service that feels like it's from 5 years in the future\".\n👉 Connect with DeepCode and start your first analysis!",
+        "when": "!deepcode:loggedIn"
+      },
+      {
+        "view": "deepcode.views.welcome1",
+        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗, let's confirm and start the remote analysis of this workspace - feel free to check out our [terms](https://www.deepcode.ai/tc?utm_source=vsc) if you are into this.\n",
+        "when": "!deepcode:loggedIn"
+      },
+      {
+        "view": "deepcode.views.welcome2",
+        "contents": "Whoa, DeepCode is now ready to run the analysis. ✅❤️🚀\n The analysis should be starting and you should see issues popping up in a bit 🍿\nIf nothing happens, feel free to hit the Rescan button below:\n[Rescan](command:deepcode.start)\nWe will be here, let us know if you need help - we love finding bugs 😊",
         "when": "!deepcode:loggedIn"
       },
       {
