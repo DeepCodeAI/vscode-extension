@@ -3,6 +3,7 @@ import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
 import { setContext, viewInBrowser } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT } from "../../constants/views";
+import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
@@ -71,8 +72,9 @@ abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleI
 
   async approveUpload(): Promise<void> {
     await this.setUploadApproved(true);
-    await this.checkApproval();
-  } 
+    await this.sendEvent(TELEMETRY_EVENTS.viewDashboard, {});
+    await this.startExtension();
+  }
 
 }
 

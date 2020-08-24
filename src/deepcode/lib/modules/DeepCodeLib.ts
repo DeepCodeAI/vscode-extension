@@ -5,6 +5,7 @@ import { setContext } from "../../utils/vscodeCommandsUtils";
 import { DEEPCODE_CONTEXT } from "../../constants/views";
 import { EXECUTION_DEBOUNCE_INTERVAL } from "../../constants/general";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
+import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 
 export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepCodeLibInterface {
   activateAll(): void {
@@ -20,9 +21,15 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
     await setContext(DEEPCODE_CONTEXT.ERROR, false);
     
     const loggedIn = await this.checkSession();
-    if (!loggedIn) return;
+    if (!loggedIn) {
+      await this.sendEvent(TELEMETRY_EVENTS.viewLogin, {});
+      return;
+    }
     const approved = await this.checkApproval();
-    if (!approved) return;
+    if (!approved) {
+      await this.sendEvent(TELEMETRY_EVENTS.viewConsent, {});
+      return;
+    }
     await this.startAnalysis();
     
     this.resetTransientErrors();

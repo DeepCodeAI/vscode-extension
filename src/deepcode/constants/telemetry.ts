@@ -1,4 +1,7 @@
 export const TELEMETRY_EVENTS = {
-  ignoreSuggestion: 'ignoreSuggestion',
+  viewLogin: 'viewLogin',
+  viewConsent: 'viewConsent',
+  viewDashboard: 'viewDashboard',
   viewSuggestion: 'viewSuggestion',
-};
+  ignoreSuggestion: 'ignoreSuggestion',
+  };
