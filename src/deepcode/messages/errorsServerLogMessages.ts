@@ -25,4 +25,5 @@ export const errorsLogs = {
   // vscodeFileChanges: "Failed to process vscode file content changes",
   command: (type: string) => `Failed to execute ${type} command`,
   sendEvent: "Failed to send event to server",
+  configWatcher: "Failed to handle configuration update",
 };
