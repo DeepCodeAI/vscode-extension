@@ -86,10 +86,10 @@ export default class DeepCodeLib extends BundlesModule implements DeepCode.DeepC
     { 'leading': true }
   );
 
-  setMode(mode: string): void {
+  async setMode(mode: string): Promise<void> {
     if (!Object.values(DEEPCODE_MODE_CODES).includes(mode)) return;
     this._mode = mode;
-    setContext(DEEPCODE_CONTEXT.MODE, mode);
+    await setContext(DEEPCODE_CONTEXT.MODE, mode);
     switch(mode) {
       case DEEPCODE_MODE_CODES.PAUSED:
         this._unpauseTimeout = setTimeout(this.unpause.bind(this), EXECUTION_PAUSE_INTERVAL);

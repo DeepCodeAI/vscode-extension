@@ -102,7 +102,11 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_SETMODE_COMMAND,
-        this.setMode.bind(this)
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_SETMODE_COMMAND,
+          this.setMode.bind(this)
+        )
       )
     );
     
@@ -120,7 +124,11 @@ class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterfa
     context.subscriptions.push(
       vscode.commands.registerCommand(
         DEEPCODE_DCIGNORE_COMMAND,
-        createDCIgnoreCommand
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_DCIGNORE_COMMAND,
+          createDCIgnoreCommand
+        )
       )
     );
 

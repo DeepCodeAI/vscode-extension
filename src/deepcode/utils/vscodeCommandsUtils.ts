@@ -20,8 +20,8 @@ export const viewInBrowser = async (url: string): Promise<void> => {
   await vscode.commands.executeCommand(DEEPCODE_OPEN_BROWSER, url);
 };
 
-export const createDCIgnoreCommand = (custom = false, path?: string): void => {
+export const createDCIgnoreCommand = async (custom = false, path?: string): Promise<void> => {
   path = path || vscode.workspace.rootPath;
   if (!path) return;
-  createDCIgnore(path, custom).catch(console.error);
+  await createDCIgnore(path, custom);
 };
