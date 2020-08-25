@@ -118,6 +118,11 @@
           "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
         },
         {
+          "id": "deepcode.views.actions",
+          "name": "Actions",
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
+        },
+        {
           "id": "deepcode.views.support",
           "name": "Help & feedback"
         }
@@ -140,7 +145,7 @@
       },
       {
         "view": "deepcode.views.tc",
-        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗. DeepCode is analysing the code remotely on DeepCode's servers(our [terms](https://www.deepcode.ai/tc?utm_source=vsc). Let's confirm you know this and start the analysis.\n[Accept and start analysing](command:deepcode.approve 'Upload code to DeepCode')\nYou can always change it in the [configuration panel](command:deepcode.settings)."
+        "contents": "Thanks for connecting with DeepCode. ✅\n 👉 You are almost set 🤗. DeepCode is analysing the code remotely on DeepCode's servers (our [terms](https://www.deepcode.ai/tc?utm_source=vsc)). Let's confirm you know this and start the analysis.\n[Accept and start analysing](command:deepcode.approve 'Upload code to DeepCode')\nYou can always change it in the [configuration panel](command:deepcode.settings)."
       },
       {
         "view": "deepcode.views.empty",
@@ -149,6 +154,26 @@
       {
         "view": "deepcode.views.analysis",
         "contents": "DeepCode analyzed your code and found no issue! 🎉"
+      },
+      {
+        "view": "deepcode.views.actions",
+        "contents": "You are currently running DeepCode in manual mode. You are in control, no automated actions from our side.\n[Analyze now](command:deepcode.start)\n[Switch to auto-scan mode](command:deepcode.setmode?%5B%22auto%22%5D)",
+        "when": "deepcode:mode == 'manual'"
+      },
+      {
+        "view": "deepcode.views.actions",
+        "contents": "DeepCode analysis is currently paused.\n[Unpause](command:deepcode.setmode?%5B%22auto%22%5D)",
+        "when": "deepcode:mode == 'paused'"
+      },
+      {
+        "view": "deepcode.views.actions",
+        "contents": "You are currently running DeepCode in a throttled mode - it scans your code every 30 minutes if it detects changes in your files.\n[Analyze now](command:deepcode.start)\n[Switch to auto-scan mode](command:deepcode.setmode?%5B%22auto%22%5D)",
+        "when": "deepcode:mode == 'throttled'"
+      },
+      {
+        "view": "deepcode.views.actions",
+        "contents": "You are currently running DeepCode in a fully automated mode. It scans your code for issues when you save a file.\nNeed to take control?\n[Pause DeepCode for 30 minutes](command:deepcode.setmode?%5B%22paused%22%5D)\n[Switch to manual scan mode](command:deepcode.setmode?%5B%22manual%22%5D)\n[Switch to throttled scan mode](command:deepcode.setmode?%5B%22throttled%22%5D)",
+        "when": "deepcode:mode != 'manual' && deepcode:mode != 'paused' && deepcode:mode != 'throttled'"
       }
     ],
     "menus": {
@@ -168,6 +193,10 @@
         {
           "command": "deepcode.login",
           "when": "!deepcode:loggedIn"
+        },
+        {
+          "command": "deepcode.dcignore",
+          "when": "!deepcode:error && deepcode:loggedIn && deepcode:uploadApproved && deepcode:workspaceFound"
         }
       ]
     },
@@ -184,7 +213,13 @@
       },
       {
         "command": "deepcode.login",
-        "title": "DeepCode login"
+        "title": "DeepCode login",
+        "icon": "$(log-in)"
+      },
+      {
+        "command": "deepcode.dcignore",
+        "title": "DeepCode create dcignore file",
+        "icon": "$(new-file)"
       }
     ]
   },
@@ -214,7 +249,8 @@
     "nock": "^12.0.3"
   },
   "dependencies": {
-    "@deepcode/tsc": "^1.3.0",
+    "@deepcode/tsc": "^1.3.1",
+    "@deepcode/dcignore": "^1.0.2",
     "@types/lodash": "^4.14.159",
     "@types/mz": "^2.7.1",
     "ignore": "^5.1.8",

@@ -234,6 +234,7 @@ namespace DeepCode {
 
   export interface DeepCodeLibInterface {
     activateAll(): void;
+    setMode(mode:string): void;
   }
 
   export interface ExtensionInterface

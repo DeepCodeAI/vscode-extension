@@ -67,7 +67,7 @@ abstract class BundlesModule extends LoginModule
 
   onAnalyseProgress(analysisResults: IQueueAnalysisCheckResult) {
     console.log("ANALYSE PROGRESS");
-    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, 0.5);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, analysisResults.progress);
   }
 
   onAnalyseFinish(analysisResults: IQueueAnalysisCheckResult) {
