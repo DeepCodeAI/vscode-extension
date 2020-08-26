@@ -1,8 +1,4 @@
-import {
-  ServiceAI,
-  AnalyseRequestDto
-} from "@deepcode/tsc";
-
+import { ServiceAI } from "@deepcode/tsc";
 import { IDE_NAME } from "../constants/general";
 
 const AI = new ServiceAI();

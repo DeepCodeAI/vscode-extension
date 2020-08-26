@@ -33,7 +33,8 @@ class DeepCodeWorkspaceFoldersWatcher
 
   private watchWorkspacesChanges(extension: DeepCode.ExtensionInterface): void {
     const proceedWithBundlesActions = async (p: string) => {
-      await extension.performBundlesActions(p);
+      // await extension.performBundlesActions(p);
+      await extension.startExtension();
     };
 
     vscode.workspace.onDidChangeWorkspaceFolders(

@@ -1,18 +1,21 @@
 import * as vscode from "vscode";
+import * as _ from "lodash";
 import http from "../../http/requests";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import { IQueueAnalysisCheckResult } from "@deepcode/tsc";
-import { window, ProgressLocation, Progress } from "vscode";
-import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { checkIfBundleIsEmpty } from "../../utils/bundlesUtils";
-import { startFilesUpload } from "../../utils/packageUtils";
+import { createListOfDirFiles } from "../../utils/packageUtils";
 import { BUNDLE_EVENTS } from "../../constants/events";
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
 import LoginModule from "../../lib/modules/LoginModule";
+import { setContext } from "../../utils/vscodeCommandsUtils";
+import { DEEPCODE_ANALYSIS_STATUS, DEEPCODE_CONTEXT } from "../../constants/views";
+import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
-class BundlesModule extends LoginModule
+abstract class BundlesModule extends LoginModule
   implements DeepCode.BundlesModuleInterface {
   private rootPath = "";
+
+  runningAnalysis = false;
 
   files: string[] = [];
   serviceAI = http.getServiceAI();
@@ -28,29 +31,47 @@ class BundlesModule extends LoginModule
     this.onAnalyseFinish = this.onAnalyseFinish.bind(this);
     this.onError = this.onError.bind(this);
 
-    this.serviceAI.on(BUNDLE_EVENTS.error, this.onError);  }
+    this.serviceAI.on(BUNDLE_EVENTS.error, this.onError);
+  }
+
+  updateStatus(status: string, progress?: number) {
+    this.analysisStatus = status;
+    if (progress) this.analysisProgress = progress;
+    this.refreshViews();
+  }
+
+  
+  onCollectBundleProgress(value: number) {
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, value);
+  }
 
   onBuildBundleProgress(processed: number, total: number) {
     console.log(`BUILD BUNDLE PROGRESS - ${processed}/${total}`);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, processed/total);
   }
 
   onBuildBundleFinish() {
     console.log("BUILD BUNDLE FINISH");
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.HASHING, 1);
   }
 
   onUploadBundleProgress(processed: number, total: number) {
     console.log(`UPLOAD BUNDLE PROGRESS - ${processed}/${total}`);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, processed/total);
   }
 
   onUploadBundleFinish() {
     console.log("UPLOAD BUNDLE FINISH");
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.UPLOADING, 1);
   }
 
   onAnalyseProgress(analysisResults: IQueueAnalysisCheckResult) {
-    console.log("on Analyse Progress");
+    console.log("ANALYSE PROGRESS");
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, analysisResults.progress);
   }
 
   onAnalyseFinish(analysisResults: IQueueAnalysisCheckResult) {
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.ANALYZING, 1);
     type ResultFiles = {
       [filePath: string]: DeepCode.AnalysisResultsFileResultsInterface;
     };
@@ -75,23 +96,15 @@ class BundlesModule extends LoginModule
 
     result.files = analysedFiles as unknown as DeepCode.AnalysisResultsInterface;
     this.analyzer.updateAnalysisResultsCollection(result, this.rootPath);
-
-    return Promise.resolve();
+    this.terminateAnalysis();
+    this.refreshViews();
   }
 
   onError(error: Error) {
-    this.errorHandler.processError(this, error);
-    throw error;
-  }
-
-  public async askUploadApproval(): Promise<void> {
-    const { uploadApproval } = deepCodeMessages;
-    let pressedButton: string | undefined;
-    
-    pressedButton = await vscode.window.showInformationMessage(uploadApproval.msg(this.termsConditionsUrl), uploadApproval.workspace, uploadApproval.global);
-    if (pressedButton) {
-      await this.approveUpload(pressedButton === uploadApproval.global);
-    }
+    this.terminateAnalysis();
+    this.processError(error, {
+      message: errorsLogs.failedServiceAI,
+    });
   }
 
   // processing workspaces
@@ -121,80 +134,96 @@ class BundlesModule extends LoginModule
 
   // procesing filter list of files, acceptable for server
   public async createFilesFilterList(): Promise<void> {
-    this.serverFilesFilterList = await http.getFilters(this.baseURL, this.token);
+    try {
+      this.serverFilesFilterList = await http.getFilters(this.baseURL, this.token);
+    } catch (err) {
+      this.processError(err, {
+        message: errorsLogs.filtersFiles
+      })
+    }
+  }
+
+  private terminateAnalysis(): void {
+    this.serviceAI.removeListeners();
+    this.runningAnalysis = false;
   }
 
   public async performBundlesActions(path: string): Promise<void> {
+    if (this.runningAnalysis) return;
+    this.runningAnalysis = true;
+
     if (!Object.keys(this.serverFilesFilterList).length) {
       await this.createFilesFilterList();
-      this.filesWatcher.activate(this);
-
       if (!Object.keys(this.serverFilesFilterList).length) {
+        this.processError(new Error(errorsLogs.filtersFiles), {
+          message: errorsLogs.filtersFiles,
+          data: {
+            filters: this.serverFilesFilterList
+          }
+        });
         return;
       }
+      this.filesWatcher.activate(this);
     }
 
-    if (!this.token) {
-      return
+    if (!this.token || !this.uploadApproved) {
+      await this.checkSession();
+      await this.checkApproval();
+      return;
     }
 
-    this.files = await startFilesUpload(path, this.serverFilesFilterList);
+    const bundle = await this.startCollectingFiles(path, this.serverFilesFilterList);
+    const removedFiles = (this.files || []).filter(f => !bundle.includes(f));
+    this.files = bundle;
     
-    const progressOptions = {
-      location: ProgressLocation.Notification,
-      title: deepCodeMessages.analysisProgress.msg,
-      cancellable: false
-    };
-
-    const countStep = (processed: number, total: number): number => {
-      const lastPhaseProgress = 33;
-      const currentProgress = (processed / total * 33) + lastPhaseProgress;
-      return currentProgress;
-    };
-
-    window.withProgress(progressOptions, async progress => {
-      this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {
-        this.onBuildBundleProgress(processed, total);
-      });
-
-      this.serviceAI.on(BUNDLE_EVENTS.buildBundleFinish, () => {
-        progress.report({ increment: 33 });
-        this.onBuildBundleFinish();
-      });
-
-      this.serviceAI.on(BUNDLE_EVENTS.uploadBundleProgress, (processed: number, total: number) => {
-        const currentProgress = countStep(processed, total);
-        this.onUploadBundleProgress(processed, total);
-        progress.report({ increment: currentProgress });
-      });
-
-      this.serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, () => {
-        this.onUploadBundleFinish();
-        progress.report({ increment: 80 });
-      });
-
-      this.serviceAI.on(BUNDLE_EVENTS.analyseProgress, (analysisResults: IQueueAnalysisCheckResult) => {
-        progress.report({ increment: 90 });
-        this.onAnalyseProgress(analysisResults);
-      });
-
-      this.serviceAI.on(
-        BUNDLE_EVENTS.analyseFinish,
-        (analysisResults: IQueueAnalysisCheckResult) => {
-          progress.report({ increment: 100 });
-          this.onAnalyseFinish(analysisResults);        
-          this.serviceAI.removeListeners();
-        }
-      );
-
-      this.serviceAI.on(BUNDLE_EVENTS.error, (error: Error) => {
-        progress.report({ increment: 100 });
-        this.onError(error);
-        this.serviceAI.removeListeners();
-      });
-
-      await http.analyse(this.baseURL, this.token, path, this.files).catch(err => {});
+    this.serviceAI.on(BUNDLE_EVENTS.buildBundleProgress, (processed: number, total: number) => {
+      this.onBuildBundleProgress(processed, total);
     });
+    this.serviceAI.on(BUNDLE_EVENTS.buildBundleFinish, () => {
+      this.onBuildBundleFinish();
+    });
+    this.serviceAI.on(BUNDLE_EVENTS.uploadBundleProgress, (processed: number, total: number) => {
+      this.onUploadBundleProgress(processed, total);
+    });
+    this.serviceAI.on(BUNDLE_EVENTS.uploadFilesFinish, () => {
+      this.onUploadBundleFinish();
+    });
+    this.serviceAI.on(BUNDLE_EVENTS.analyseProgress, (analysisResults: IQueueAnalysisCheckResult) => {
+      this.onAnalyseProgress(analysisResults);
+    });
+    this.serviceAI.on(
+      BUNDLE_EVENTS.analyseFinish,
+      (analysisResults: IQueueAnalysisCheckResult) => {
+        this.onAnalyseFinish(analysisResults);
+      }
+    );
+    this.serviceAI.on(BUNDLE_EVENTS.error, (error: Error) => {
+      this.onError(error);
+    });
+
+    http.analyse(this.baseURL, this.token, path, this.files, removedFiles).catch(
+      (error) => this.processError(error, {
+        message: errorsLogs.analyse
+      })
+    );
+  }
+
+  private async startCollectingFiles(
+    folderPath: string,
+    serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
+  ): Promise<string[]> {
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, 0);
+    console.log("COLLECTING");
+    const bundle = await createListOfDirFiles({
+      serverFilesFilterList,
+      path: folderPath,
+      progress: {
+        onProgress: this.onCollectBundleProgress.bind(this),
+      }
+    });
+    console.warn(`Processed ${bundle.length} files`);
+    this.updateStatus(DEEPCODE_ANALYSIS_STATUS.COLLECTING, 1);
+    return bundle;
   }
 
   private async createSingleHashBundle(
@@ -251,6 +280,34 @@ class BundlesModule extends LoginModule
       return;
     }
     delete this.remoteBundles[workspacePath];
+  }
+
+  public async startAnalysis(): Promise<void> {
+    try {
+      const workspaceFolders: readonly vscode.WorkspaceFolder[] | undefined = vscode.workspace.workspaceFolders;
+      if (!workspaceFolders || !workspaceFolders.length) {
+        await setContext(DEEPCODE_CONTEXT.ANALYZING, false);
+        return;
+      }
+
+      this.createWorkspacesList(workspaceFolders);
+
+      if (this.workspacesPaths.length) {
+        await setContext(DEEPCODE_CONTEXT.ANALYZING, true);
+        this.updateCurrentWorkspacePath(this.workspacesPaths[0]);
+
+        await this.updateHashesBundles();
+        for await (const path of this.workspacesPaths) {
+          await this.performBundlesActions(path);
+        }
+      } else {
+        await setContext(DEEPCODE_CONTEXT.ANALYZING, false);
+      }
+    } catch(err) {
+      await this.processError(err, {
+        message: errorsLogs.failedAnalysis,
+      });
+    }
   }
 }
 

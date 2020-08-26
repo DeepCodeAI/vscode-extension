@@ -12,7 +12,6 @@ import {
 import { DEEPCODE_NAME } from "../../constants/general";
 import { TELEMETRY_EVENTS } from "../../constants/telemetry";
 import { ISSUES_MARKERS_DECORATION_TYPE } from "../../constants/analysis";
-import { deepCodeMessages } from "../../messages/deepCodeMessages";
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 import { DisposableCodeActionsProvider } from "../deepCodeProviders/codeActionsProvider/DeepCodeIssuesActionsProvider";
@@ -23,17 +22,14 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
     [key: number]: { name: vscode.DiagnosticSeverity; show: boolean };
   };
   private extension: DeepCode.ExtensionInterface | undefined;
-  private analysisProgressValue: number = 1; // default value for progress to make it visible from start
-  private progress = vscode.window.withProgress;
-  private analysisInProgress: boolean = false;
   private issueHoverProvider: vscode.Disposable | undefined;
   private ignoreActionsProvider: vscode.Disposable | undefined;
-  private analysisQueueCount: number = 0;
   private issuesMarkersdecorationType:
     | vscode.TextEditorDecorationType
     | undefined;
   public deepcodeReview: vscode.DiagnosticCollection | undefined;
   public analysisResultsCollection: DeepCode.AnalysisResultsCollectionInterface;
+  
   public constructor() {
     this.SEVERITIES = createDeepCodeSeveritiesMap();
     this.deepcodeReview = vscode.languages.createDiagnosticCollection(DEEPCODE_NAME);
@@ -223,46 +219,13 @@ class DeepCodeAnalyzer implements DeepCode.AnalyzerInterface {
         this.setIssuesMarkersDecoration();
       }
     } catch (err) {
-      extension.errorHandler.processError(extension, err, {
+      extension.processError(err, {
         message: errorsLogs.updateReviewPositions,
         bundleId: (extension.remoteBundles[updatedFile.workspace] || {}).bundleId,
         data: {
           [updatedFile.filePathInWorkspace]: updatedFile.contentChanges
         }
       });
-    }
-  }
-
-  private async processFailedReviewCodeResults(
-    extension: DeepCode.ExtensionInterface,
-    path: string
-  ): Promise<void> {
-    const { bundleId } = extension.remoteBundles[path];
-    extension.errorHandler.processError(extension, new Error(), {
-      message: errorsLogs.failedStatusOfAnalysis,
-      bundleId
-    });
-    const workspace = vscode.workspace.workspaceFolders
-      ? vscode.workspace.workspaceFolders.find(folder => {
-          return folder.uri.fsPath === path;
-        })
-      : { name: "" };
-    const workspaceName = workspace ? workspace.name : "";
-    const {
-      msg: analysisErrorMsg,
-      button: analysisErrorBtn
-    } = deepCodeMessages.codeReviewFailed;
-    const analysisErrorButton:
-      | string
-      | undefined = await vscode.window.showErrorMessage(
-      analysisErrorMsg(workspaceName),
-      analysisErrorBtn
-    );
-    if (analysisErrorButton === analysisErrorBtn) {
-      // if analysis status === FAILED,
-      // we create new bundle, send it, check it and trigger new review
-      await extension.updateHashesBundles(path);
-      await extension.performBundlesActions(path);
     }
   }
 

@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
-import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 class DeepCodeEditorsWatcher implements DeepCode.DeepCodeWatcherInterface {
   private currentTextEditors: {

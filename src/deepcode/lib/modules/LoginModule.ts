@@ -1,46 +1,53 @@
-import * as vscode from "vscode";
-import * as open from "open";
-
+import ReportModule from "./ReportModule";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
 import http from "../../http/requests";
-import { deepCodeMessages } from "../../messages/deepCodeMessages";
-import ReportModule from "./ReportModule";
+import { setContext, viewInBrowser } from "../../utils/vscodeCommandsUtils";
+import { DEEPCODE_CONTEXT } from "../../constants/views";
+import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, duration));
 
-class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface {
+abstract class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface {
   private pendingLogin: boolean = false;
 
-  public async initiateLogin(): Promise<void> {
+  async initiateLogin(): Promise<void> {
     if (this.pendingLogin) {
-      return
+      return;
     }
+
     this.pendingLogin = true;
-
     try {
-      const { login } = deepCodeMessages;
-      let pressedButton: string | undefined;
-
-      pressedButton = await vscode.window.showInformationMessage(login.msg, login.button);
-      if (pressedButton === login.button) {
-        const result = await http.login(this.baseURL, this.source);
-
-        let { sessionToken, loginURL } = result;
-        if (!sessionToken || !loginURL) {
-          throw new Error();
-        }
-        await open(loginURL);
-        await this.setToken(sessionToken);
-        await this.waitLoginConfirmation();
+      await setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
+      const result = await http.login(this.baseURL, this.source);
+      const { sessionToken, loginURL } = result;
+      if (!sessionToken || !loginURL) {
+        throw new Error(errorsLogs.login);
       }
+      await this.setToken(sessionToken);
+      await viewInBrowser(loginURL);
+      await this.waitLoginConfirmation();
+    } catch (err) {
+      await this.processError(err, {
+        message: errorsLogs.login
+      });
     } finally {
       this.pendingLogin = false;
     }
   }
 
-  public checkSession(): Promise<boolean> {
-    if (!this.token) return Promise.resolve(false);
-    return http.checkSession(this.baseURL, this.token);
+  async checkSession(): Promise<boolean> {
+    let validSession = false;
+    if (this.token) {
+      try {
+        validSession = !!(await http.checkSession(this.baseURL, this.token));
+      } catch (err) {
+        this.processError(err, {
+          message: errorsLogs.loginStatus
+        });
+      }
+    }
+    await setContext(DEEPCODE_CONTEXT.LOGGEDIN, validSession);
+    return validSession;
   }
 
   private async waitLoginConfirmation(): Promise<void> {
@@ -51,10 +58,21 @@ class LoginModule extends ReportModule implements DeepCode.LoginModuleInterface 
 
       const confirmed = await this.checkSession();
       if (confirmed) {
-        return
+        return;
       }
     }
   }
+
+  async checkApproval(): Promise<boolean> {
+    const approved = this.uploadApproved;
+    await setContext(DEEPCODE_CONTEXT.APPROVED, approved);
+    return approved;
+  }
+
+  async approveUpload(): Promise<void> {
+    await this.setUploadApproved(true);
+    await this.checkApproval();
+  } 
 
 }
 

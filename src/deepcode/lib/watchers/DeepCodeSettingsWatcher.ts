@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 import DeepCode from "../../../interfaces/DeepCodeInterfaces";
+import { errorsLogs } from "../../messages/errorsServerLogMessages";
 
 class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
   
-  private async onChangeBaseURL(extension: DeepCode.ExtensionInterface): Promise<void> {
+  private async onChangeConfiguration(extension: DeepCode.ExtensionInterface, key: string): Promise<void> {
     const extensionConfig = vscode.workspace.getConfiguration('deepcode');
     // @ts-ignore */}
     const url: string = extensionConfig.get('url');
@@ -12,16 +13,27 @@ class DeepCodeSettingsWatcher implements DeepCode.DeepCodeWatcherInterface {
     if (cleaned !== url) {
       extensionConfig.update('url', cleaned, true);
     } else {
-      await extension.store.cleanStore();
-      await extension.activateExtensionAnalyzeActions();
+      await extension.startExtension();
     }
   }
 
   public activate(extension: DeepCode.ExtensionInterface): void {
     vscode.workspace.onDidChangeConfiguration(
-      (event: vscode.ConfigurationChangeEvent): void => {
-        if (event.affectsConfiguration('deepcode.url')) {
-          this.onChangeBaseURL(extension);
+      async (event: vscode.ConfigurationChangeEvent): Promise<void> => {
+        const change = [
+          'deepcode.url', 'deepcode.token', 'deepcode.uploadApproved'
+        ].find(config => event.affectsConfiguration(config));
+        if (change) {
+          try {
+            await this.onChangeConfiguration(extension, change);
+          } catch (error) {
+            await extension.processError(error, {
+              message: errorsLogs.configWatcher,
+              data: {
+                configurationKey: change,
+              }
+            })
+          }
         }
       }
     );

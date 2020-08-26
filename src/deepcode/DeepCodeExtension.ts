@@ -1,50 +1,143 @@
 import * as vscode from "vscode";
+import * as open from "open";
 
 import DeepCode from "../interfaces/DeepCodeInterfaces";
 import DeepCodeLib from "./lib/modules/DeepCodeLib";
 
-import { DEEPCODE_START_COMMAND, DEEPCODE_SETTINGS_COMMAND } from "./constants/commands";
-import { openDeepcodeSettingsCommand } from "./utils/vscodeCommandsUtils";
+import {
+  DEEPCODE_START_COMMAND,
+  DEEPCODE_SETMODE_COMMAND,
+  DEEPCODE_SETTINGS_COMMAND,
+  DEEPCODE_DCIGNORE_COMMAND,
+  DEEPCODE_LOGIN,
+  DEEPCODE_APPROVE,
+  DEEPCODE_OPEN_BROWSER,
+  DEEPCODE_OPEN_LOCAL,
+} from "./constants/commands";
+import { openDeepcodeSettingsCommand, createDCIgnoreCommand } from "./utils/vscodeCommandsUtils";
+import { errorsLogs } from "./messages/errorsServerLogMessages";
+
+import {
+  DEEPCODE_VIEW_SUPPORT,
+  DEEPCODE_VIEW_ANALYSIS,
+} from "./constants/views";
+import { SupportProvider } from "./view/SupportProvider";
+import { IssueProvider } from "./view/IssueProvider";
 
 class DeepCodeExtension extends DeepCodeLib implements DeepCode.ExtensionInterface {
+  private async executeCommand(
+    name: string,
+    fn: (...args: any[]) => Promise<any>,
+    ...args: any[]
+  ): Promise<any> {
+    try {
+      await fn(...args);
+    } catch (error) {
+      this.processError(error, {
+        message: errorsLogs.command(name),
+      });
+    }
+  }
+  
   public activate(context: vscode.ExtensionContext): void {
-    this.store.createStore(context);
     this.statusBarItem.show();
 
     context.subscriptions.push(
       vscode.commands.registerCommand(
-        DEEPCODE_START_COMMAND,
-        this.activateExtensionAnalyzeActions.bind(this)
+        DEEPCODE_OPEN_BROWSER,
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_OPEN_BROWSER,
+          (url: string) => open(url)
+        )
       )
     );
 
     context.subscriptions.push(
       vscode.commands.registerCommand(
+        DEEPCODE_OPEN_LOCAL,
+        (path: vscode.Uri, range?: vscode.Range) => {
+          vscode.window.showTextDocument(path, { selection: range }).then(
+            () => {}, (err) => this.processError(err, {
+              message: errorsLogs.command(DEEPCODE_OPEN_LOCAL),
+            })
+          );
+        }
+      )
+    );
+    
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        DEEPCODE_LOGIN,
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_LOGIN,
+          this.initiateLogin.bind(this)
+        )
+      )
+    );
+    
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        DEEPCODE_APPROVE,
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_APPROVE,
+          this.approveUpload.bind(this)
+        )
+      )
+    );
+    
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        DEEPCODE_START_COMMAND,
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_START_COMMAND,
+          this.startExtension.bind(this)
+        )
+      )
+    );
+    
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
+        DEEPCODE_SETMODE_COMMAND,
+        this.setMode.bind(this)
+      )
+    );
+    
+    context.subscriptions.push(
+      vscode.commands.registerCommand(
         DEEPCODE_SETTINGS_COMMAND,
-        openDeepcodeSettingsCommand
+        this.executeCommand.bind(
+          this,
+          DEEPCODE_SETTINGS_COMMAND,
+          openDeepcodeSettingsCommand
+        )
       )
     );
 
     context.subscriptions.push(
-      { dispose: this.startExtension() },
+      vscode.commands.registerCommand(
+        DEEPCODE_DCIGNORE_COMMAND,
+        createDCIgnoreCommand
+      )
     );
 
-    this.runMigration();
-  }
+    vscode.window.registerTreeDataProvider(
+      DEEPCODE_VIEW_SUPPORT, 
+      new SupportProvider(this)
+    );
 
-  private runMigration() {
-    // TODO: remove it after 01.06.2020
-    // Move 'deepcode.api.cloudBackend' to 'deepcode.url' configuration
-    const config = vscode.workspace.getConfiguration('deepcode');
-    const oldBaseURL = config.get('api.cloudBackend');
-    if (!config.get('url') && oldBaseURL) {
-      config.update('url', oldBaseURL, true);
-    }
-  }
+    vscode.window.registerTreeDataProvider(
+      DEEPCODE_VIEW_ANALYSIS, 
+      new IssueProvider(this)
+    );
 
-  public startExtension(): any {
     this.activateAll();
-    this.activateExtensionAnalyzeActions();
+    this.startExtension().catch((err) => this.processError(err, {
+      message: errorsLogs.failedExecution,
+    }));
   }
 
 }

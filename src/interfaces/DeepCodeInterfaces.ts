@@ -136,13 +136,6 @@ namespace DeepCode {
     fileUri: vscode.Uri;
   }
 
-  export interface ExtensionStoreInterface {
-    selectors: StateSelectorsInterface;
-    actions: StateSelectorsInterface;
-    createStore(context: ExtensionContext): Promise<void>;
-    cleanStore(): void;
-  }
-
   export interface AnalyzerInterface {
     activate(extension: ExtensionInterface | any): void;
     deepcodeReview: DiagnosticCollection | undefined;
@@ -170,21 +163,16 @@ namespace DeepCode {
     activate(extension: ExtensionInterface | any): void;
   }
 
-  export interface ErrorHandlerInterface {
-    processError(
-      extension: ExtensionInterface | any,
-      error: errorType,
-      options?: { [key: string]: any }
-    ): Promise<void>;
-  }
-
   export interface BaseDeepCodeModuleInterface {
-    store: DeepCode.ExtensionStoreInterface;
     currentWorkspacePath: string;
     workspacesPaths: Array<string>;
     hashesBundles: HashesBundlesInterface;
     serverFilesFilterList: AllowedServerFilterListInterface;
     remoteBundles: RemoteBundlesCollectionInterface;
+    refreshViewEmitter: vscode.EventEmitter<any>;
+    refreshViews(content: any): void;
+    analysisStatus: string;
+    analysisProgress: number;
     source: string;
     staticToken: string;
     defaultBaseURL: string;
@@ -196,27 +184,37 @@ namespace DeepCode {
     uploadApproved: boolean;
     shouldReportErrors: boolean;
     shouldReportEvents: boolean;
-    approveUpload(isGlobal: boolean): Promise<void>;
+    setUploadApproved(value: boolean): Promise<void>;
     analyzer: DeepCode.AnalyzerInterface;
     statusBarItem: StatusBarItemInterface;
     filesWatcher: DeepCodeWatcherInterface;
     workspacesWatcher: DeepCodeWatcherInterface;
     settingsWatcher: DeepCodeWatcherInterface;
-    errorHandler: ErrorHandlerInterface;
+    
+    // Abstract methods
+    processError(
+      error: errorType,
+      options?: { [key: string]: any }
+    ): Promise<void>;
+    startExtension(): Promise<void>;
   }
 
   export interface ReportModuleInterface {
     sendError(options: {[key: string]: any}): Promise<void> | void;
     sendEvent(event: string, options: {[key: string]: any}): Promise<void> | void;
+    resetTransientErrors(): void;
   }
 
   export interface LoginModuleInterface {
     initiateLogin(): Promise<void>;
     checkSession(): Promise<boolean>;
+    approveUpload(): Promise<void>;
+    checkApproval(): Promise<boolean>;
   }
 
   export interface BundlesModuleInterface {
-    askUploadApproval(): Promise<void>;
+    readonly runningAnalysis: boolean;
+    startAnalysis(): Promise<void>;
     createFilesFilterList(): Promise<void>;
     createWorkspacesList(workspaces: WorkspaceFolder[]): void;
     changeWorkspaceList(workspacePath: string, deleteAddFlag?: boolean): void;
@@ -236,7 +234,7 @@ namespace DeepCode {
 
   export interface DeepCodeLibInterface {
     activateAll(): void;
-    activateExtensionAnalyzeActions(): Promise<void>;
+    setMode(mode:string): void;
   }
 
   export interface ExtensionInterface
@@ -246,7 +244,6 @@ namespace DeepCode {
       BundlesModuleInterface,
       DeepCodeLibInterface {
     activate(context: ExtensionContext): void;
-    startExtension(): any;
   }
 }
 

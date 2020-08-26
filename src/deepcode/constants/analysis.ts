@@ -25,4 +25,3 @@ export const ISSUES_MARKERS_DECORATION_TYPE: { [key: string]: string } = {
 };
 
 export const ISSUE_ID_SPLITTER = "%2Fdc%2F";
-export const ISSUE_MARKER_HELPER_MSG = "Issue helper";

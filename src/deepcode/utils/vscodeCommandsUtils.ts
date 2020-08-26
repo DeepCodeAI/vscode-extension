@@ -1,22 +1,27 @@
 import * as vscode from "vscode";
-import { DEEPCODE_NAME } from "../constants/general";
+import { DEEPCODE_EXTENSION_NAME } from "../constants/general";
 import {
-  DEEPCODE_START_COMMAND,
-  VSCODE_GO_TO_SETTINGS_COMMAND
+  VSCODE_GO_TO_SETTINGS_COMMAND,
+  DEEPCODE_CONTEXT_PREFIX,
+  DEEPCODE_OPEN_BROWSER,
 } from "../constants/commands";
+import { createDCIgnore } from "./filesUtils"
 
-export const getDeepcodeExtensionId = (): string => {
-  const extension = vscode.extensions.all.find(
-    extension => extension.packageJSON.displayName === DEEPCODE_NAME
-  );
-  return extension ? extension.packageJSON.id : "";
+export const openDeepcodeSettingsCommand = async (): Promise<void> => {
+  await vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, DEEPCODE_EXTENSION_NAME);
 };
 
-export const openDeepcodeSettingsCommand = (): void => {
-  const deepcodeId = getDeepcodeExtensionId();
-  vscode.commands.executeCommand(VSCODE_GO_TO_SETTINGS_COMMAND, deepcodeId);
+export const setContext = async (key: string, value: unknown): Promise<void> => {
+  console.log("DeepCode context", key, value);
+  await vscode.commands.executeCommand('setContext', `${DEEPCODE_CONTEXT_PREFIX}${key}`, value);
 };
 
-export const startDeepCodeCommand = (): void => {
-  vscode.commands.executeCommand(DEEPCODE_START_COMMAND);
+export const viewInBrowser = async (url: string): Promise<void> => {
+  await vscode.commands.executeCommand(DEEPCODE_OPEN_BROWSER, url);
+};
+
+export const createDCIgnoreCommand = (custom = false, path?: string): void => {
+  path = path || vscode.workspace.rootPath;
+  if (!path) return;
+  createDCIgnore(path, custom).catch(console.error);
 };

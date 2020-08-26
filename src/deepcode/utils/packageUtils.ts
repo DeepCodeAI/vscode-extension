@@ -1,7 +1,5 @@
 import { fs } from "mz";
 import * as nodePath from "path";
-import { window, ProgressLocation, Progress } from "vscode";
-import { deepCodeMessages } from "../messages/deepCodeMessages";
 import DeepCode from "../../interfaces/DeepCodeInterfaces";
 import { ExclusionRule, ExclusionFilter } from "../utils/ignoreUtils";
 import {
@@ -11,25 +9,20 @@ import {
 import { DCIGNORE_FILENAME, GITIGNORE_FILENAME, EXCLUDED_NAMES } from "../constants/filesConstants";
 import { ALLOWED_PAYLOAD_SIZE } from "../constants/general";
 
-let filesProgress = { processed: 0, total: 0 };
-
-// The file limit was hardcoded to 2mb but seems to be a function of ALLOWED_PAYLOAD_SIZE
-// TODO what exactly is transmitted eventually and what is a good exact limit?
-const SAFE_PAYLOAD_SIZE = ALLOWED_PAYLOAD_SIZE / 2; // safe size for requests0
+const SAFE_PAYLOAD_SIZE = ALLOWED_PAYLOAD_SIZE / 2;
 
 interface ProgressInterface {
-  filesProcessed: number;
-  totalFiles: number;
-  percentDone: number;
-  progressWindow: Progress<{ increment: number; message: string }>;
+  onProgress: (value: number) => void;
+  percentDone?: number;
+  multiplier?: number;
 }
 
 interface CreateListOfFiles {
   serverFilesFilterList: DeepCode.AllowedServerFilterListInterface;
-  folderPath: string;
   path: string;
-  exclusionFilter: ExclusionFilter;
   progress: ProgressInterface;
+  folderPath?: string;
+  exclusionFilter?: ExclusionFilter;
 }
 
 // Helper function - read files and count progress
@@ -41,15 +34,22 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
     exclusionFilter,
     progress
   } = options;
+  // Entry point default values:
+  exclusionFilter = exclusionFilter || getBaseExclusionFilter();
+  progress.percentDone = progress.percentDone || 0;
+  progress.multiplier = progress.multiplier || 1;
 
   let list: string[] = [];
-  const dirPath = path || folderPath;
-  const dirContent: string[] = await fs.readdir(dirPath);
-  const relativeDirPath = nodePath.relative(folderPath, dirPath);
+  folderPath = folderPath || path;
+  const dirContent: string[] = await fs.readdir(path);
+  const relativeDirPath = nodePath.relative(folderPath, path);
+
+  const progressPerChild = progress.multiplier / dirContent.length;
+  let currentProgress = progress.percentDone;
   
   // First look for .gitignore and .dcignore files.
   for (const name of dirContent) {
-    const fullChildPath = nodePath.join(dirPath, name);
+    const fullChildPath = nodePath.join(path, name);
 
     if ([GITIGNORE_FILENAME, DCIGNORE_FILENAME].includes(name)) {
       // We've found a ignore file.
@@ -68,133 +68,61 @@ export const createListOfDirFiles = async (options: CreateListOfFiles) => {
   for (const name of dirContent) {
     try {
       const relativeChildPath = nodePath.join(relativeDirPath, name);
-      const fullChildPath = nodePath.join(dirPath, name);
+      const fullChildPath = nodePath.join(path, name);
       const fileStats = fs.statSync(fullChildPath);
       const isDirectory = fileStats.isDirectory();
       const isFile = fileStats.isFile();
 
-      if (isFile) {
-        // Update progress window on processed (non-directory) files
-        ++progress.filesProcessed;
-
-        // This check is just to throttle the reporting process
-        if (progress.filesProcessed % 100 === 0) {
-          const currentPercentDone = Math.round(
-            (progress.filesProcessed / progress.totalFiles) * 100
-          );
-          const percentDoneIncrement =
-            currentPercentDone - progress.percentDone;
-
-          if (percentDoneIncrement > 0) {
-            progress.progressWindow.report({
-              increment: percentDoneIncrement,
-              // message: `${progress.filesProcessed} of ${progress.totalFiles} done (${currentPercentDone}%)`
-              message: `${progress.filesProcessed}`
-            });
-            progress.percentDone = currentPercentDone;
-          }
-        }
-      }
-
       if (exclusionFilter.excludes(relativeChildPath)) {
-        continue;
+        throw new Error(`File filtered by path: ${relativeChildPath}`);
       }
 
       if (isFile) {
         if (!acceptFileToBundle(name, serverFilesFilterList)) {
-          continue;
+          throw new Error(`File filtered by name: ${name}`);
         }
 
         // Exclude files which are too large to be transferred via http. There is currently no
         // way to process them in multiple chunks
         const fileContentSize = fileStats.size;
         if (fileContentSize > SAFE_PAYLOAD_SIZE) {
-          console.log(
-            "Excluding file " +
-              fullChildPath +
-              " from processing: size " +
-              fileContentSize +
-              " exceeds payload size limit " +
-              SAFE_PAYLOAD_SIZE
-          );
-          continue;
+          console.log(`Excluding file ${fullChildPath} from processing: size ${fileContentSize} exceeds payload size limit ${SAFE_PAYLOAD_SIZE}`);
+          throw new Error(`File filtered by size: ${fileContentSize}`);
         }
 
-        const filePath = dirPath.split(folderPath)[1];
+        const filePath = path.split(folderPath)[1];
         list.push(`${filePath}/${name}`);
       }
 
       if (isDirectory) {
-        const {
-          bundle: subBundle,
-          progress: subProgress
-        } = await createListOfDirFiles({
+        const subList = await createListOfDirFiles({
           serverFilesFilterList,
           folderPath,
-          path: `${dirPath}/${name}`,
+          path: `${path}/${name}`,
           exclusionFilter,
-          progress
+          progress: {
+            onProgress: progress.onProgress,
+            multiplier: progressPerChild,
+            percentDone: currentProgress,
+          }
         });
-
-        progress = subProgress;
-        list.push(...subBundle);
+        list.push(...subList);
       }
-    } catch (err) {
-      continue;
+    } catch (e) {
+      // Ignore errors and continue
+    } finally {
+      currentProgress += progressPerChild;
+      progress.onProgress(currentProgress);
     }
   }
-  filesProgress = {
-    processed: progress.filesProcessed,
-    total: progress.totalFiles
-  };
 
-  return {
-    bundle: list,
-    progress
-  };
+  return list;
 };
 
-export const startFilesUpload = async(
-  folderPath: string,
-  serverFilesFilterList: DeepCode.AllowedServerFilterListInterface
-): Promise<string[]> => {
+export const getBaseExclusionFilter = (): ExclusionFilter => {
   const exclusionFilter = new ExclusionFilter();
   const rootExclusionRule = new ExclusionRule();
   rootExclusionRule.addExclusions(EXCLUDED_NAMES, "");
   exclusionFilter.addExclusionRule(rootExclusionRule);
-
-  const progressOptions = {
-    location: ProgressLocation.Notification,
-    title: deepCodeMessages.fileLoadingProgress.msg,
-    cancellable: false
-  };
-
-  const {
-    bundle: finalBundle,
-    progress: finalProgress
-  } = await window.withProgress(progressOptions, async (progress) => {
-    // Get a directory size overview for progress reporting
-    progress.report({ increment: 1 });
-
-    // Filter, read and hash all files
-    const res = await createListOfDirFiles({
-      serverFilesFilterList,
-      folderPath: folderPath,
-      path: folderPath,
-      exclusionFilter: exclusionFilter,
-      progress: {
-        // progress data
-        filesProcessed: 0,
-        totalFiles: 100,
-        percentDone: 0,
-        progressWindow: progress
-      }
-    });
-    progress.report({ increment: 100 });
-    return res;
-  });
-
-  console.warn(`Processed ${Object.keys(finalBundle).length} files`);
-
-  return finalBundle; // final window result
+  return exclusionFilter;
 };

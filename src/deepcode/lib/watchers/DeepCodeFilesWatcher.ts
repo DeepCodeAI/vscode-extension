@@ -59,7 +59,8 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
           // await extension.extendBundleOnServer(updatedFiles, workspacePath);
           // await extension.checkBundleOnServer(workspacePath);
         } else {
-          await extension.performBundlesActions(workspacePath);
+          // await extension.performBundlesActions(workspacePath);
+          await extension.startExtension();
         }
       }
     }
@@ -102,7 +103,7 @@ class DeepCodeFilesWatcher implements DeepCode.DeepCodeWatcherInterface {
         } catch (err) {
           const filePathInBundle = filePath.split(fileWorkspacePath)[1];
           
-          await extension.errorHandler.processError(extension, err, {
+          await extension.processError(err, {
             message: errorsLogs.watchFileBeforeExtendBundle,
             bundleId: extension.remoteBundles[fileWorkspacePath].bundleId,
             data: {

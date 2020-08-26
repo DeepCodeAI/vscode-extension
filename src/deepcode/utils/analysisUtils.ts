@@ -6,8 +6,7 @@ import {
   IGNORE_ISSUE_BASE_COMMENT_TEXT,
   FILE_IGNORE_ISSUE_BASE_COMMENT_TEXT,
   IGNORE_ISSUE_REASON_TIP,
-  ISSUE_ID_SPLITTER,
-  ISSUE_MARKER_HELPER_MSG
+  ISSUE_ID_SPLITTER
 } from "../constants/analysis";
 
 export const createDeepCodeSeveritiesMap = () => {
@@ -28,7 +27,7 @@ export const getDeepCodeSeverity = (vscodeSeverity: vscode.DiagnosticSeverity) =
     [vscode.DiagnosticSeverity.Information]: information,
     [vscode.DiagnosticSeverity.Warning]: warning,
     [vscode.DiagnosticSeverity.Error]: error,
-    [vscode.DiagnosticSeverity.Hint]: -1,
+    [vscode.DiagnosticSeverity.Hint]: information,
   }[vscodeSeverity];
 }
 
@@ -227,10 +226,7 @@ export const createIssueRelatedInformation = ({
       for (const position of markerPositions) {
         const relatedInfo = new vscode.DiagnosticRelatedInformation(
           new vscode.Location(fileUri, createIssueCorrectRange(position)),
-          // temporary issue marker message
-          ISSUE_MARKER_HELPER_MSG
-          // to get marker msg from issue message use:
-          // createIssueMarkerMsg(message, markerMsgIdxs)
+          createIssueMarkerMsg(message, markerMsgIdxs)
         );
         relatedInfoList.push(relatedInfo);
       }
