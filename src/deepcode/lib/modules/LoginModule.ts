@@ -14,25 +14,35 @@ const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, d
 
 abstract class LoginModule extends ReportModule implements LoginModuleInterface {
   private pendingLogin: boolean = false;
+  private _token: string = '';
 
   async initiateLogin(): Promise<void> {
-    await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
-
     if (this.pendingLogin) {
       return;
     }
+
+    await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
 
     this.pendingLogin = true;
     try {
       const checkCurrentToken = await this.checkSession();
       if (checkCurrentToken) return;
+
+      if (this._token) {
+        const checkPreviousToken = await this.checkSession(this._token);
+        if (checkPreviousToken) {
+          await this.setToken(this._token);
+          return;
+        }
+      }
+
       const response = await startSession({ baseURL: this.baseURL, source: this.source });
       if (response.type == 'error') {
         throw new Error(errorsLogs.login);
       }
 
       const { sessionToken, loginURL } = response.value;
-
+      this._token = sessionToken;
       await viewInBrowser(loginURL);
       const confirmed = await this.waitLoginConfirmation(sessionToken);
       if (confirmed) {
@@ -51,10 +61,15 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
     let validSession = false;
     if (token || this.token) {
       try {
-        validSession = !!(await checkSession({
+        const session = await checkSession({
           baseURL: this.baseURL,
           sessionToken: token || this.token,
-        }));
+        });
+        if (session.type === 'error') {
+          validSession = false;
+        } else {
+          validSession = session.value;
+        }
       } catch (err) {
         await this.processError(err, {
           message: errorsLogs.loginStatus,

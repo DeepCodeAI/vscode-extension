@@ -31,20 +31,24 @@ import { IssueProvider } from './view/IssueProvider';
 
 class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
   context: vscode.ExtensionContext | undefined;
+  private debouncedCommands: Record<string,_.DebouncedFunc<((...args: any[]) => Promise<any>)>> = {};
 
-  private executeCommand = _.debounce(
-    async (name: string, fn: (...args: any[]) => Promise<any>, ...args: any[]): Promise<any> => {
-      try {
-        await fn(...args);
-      } catch (error) {
-        await this.processError(error, {
-          message: errorsLogs.command(name),
-        });
-      }
-    },
-    COMMAND_DEBOUNCE_INTERVAL,
-    { leading: true, trailing: false },
-  );
+  private async executeCommand(name: string, fn: (...args: any[]) => Promise<any>, ...args: any[]): Promise<any> {
+    if (!this.debouncedCommands[name]) this.debouncedCommands[name] = _.debounce(
+      async (...args: any[]): Promise<any> => {
+        try {
+          return await fn(...args);
+        } catch (error) {
+          await this.processError(error, {
+            message: errorsLogs.command(name),
+          });
+        }
+      },
+      COMMAND_DEBOUNCE_INTERVAL,
+      { leading: true, trailing: false },
+    );
+    return this.debouncedCommands[name](...args);
+  }
 
   public activate(context: vscode.ExtensionContext): void {
     this.context = context;
