@@ -434,7 +434,7 @@ function getWebviewContent(images: Record<string,string>) { return `
 
         // TODO REMOVE ME
         const chips = [
-          ...(Array.isArray(suggestion.categories) ? suggestion.categories : []),
+          ...(Array.isArray(suggestion.categories) ? suggestion.categories : Object.keys(suggestion.categories)),
           ...(Array.isArray(suggestion.tags) ? suggestion.tags : []),
         ]
 
@@ -471,18 +471,12 @@ function getWebviewContent(images: Record<string,string>) { return `
           example.className = "hidden";
         }
 
-        // REMOVE THIS
-        ecd = suggestion.exampleCommitDescriptions && Array.isArray(suggestion.exampleCommitDescriptions);
-
         const explanationTop = document.getElementById('explanations-top');
-        // FIXME
-        explanationTop.className = ecd && suggestion.exampleCommitDescriptions.lenght ? '' : 'hidden';
+        explanationTop.className = suggestion.exampleCommitDescriptions.lenght ? '' : 'hidden';
 
         const explanations = document.getElementById('explanations');
         explanations.querySelectorAll('*').forEach(n => n.remove());
-        
-        // FIXME
-        if (ecd) for (let e of suggestion.exampleCommitDescriptions) {
+        for (let e of suggestion.exampleCommitDescriptions) {
           const exp = document.createElement("div");
           exp.className = "explanation font-light";
           exp.innerHTML = e;
