@@ -432,9 +432,15 @@ function getWebviewContent(images: Record<string,string>) { return `
         const suggestionPosition2 = document.getElementById('line-position2');
         suggestionPosition2.innerHTML = suggestion.rows[0];
 
+        // TODO REMOVE ME
+        const chips = [
+          ...(Array.isArray(suggestion.categories) ? suggestion.categories : []),
+          ...(Array.isArray(suggestion.tags) ? suggestion.tags : []),
+        ]
+
         const labels = document.getElementById('labels');
         labels.querySelectorAll('*').forEach(n => n.remove());
-        for (let l of [...suggestion.categories, ...suggestion.tags]) {
+        for (let l of chips) {
           const chip = document.createElement("div");
           chip.className = "chip";
           chip.innerHTML = l;
