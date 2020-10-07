@@ -465,12 +465,18 @@ function getWebviewContent(images: Record<string,string>) { return `
           example.className = "hidden";
         }
 
+        // REMOVE THIS
+        ecd = suggestion.exampleCommitDescriptions && Array.isArray(suggestion.exampleCommitDescriptions);
+
         const explanationTop = document.getElementById('explanations-top');
-        explanationTop.className = suggestion.exampleCommitDescriptions.lenght ? '' : 'hidden';
+        // FIXME
+        explanationTop.className = ecd && suggestion.exampleCommitDescriptions.lenght ? '' : 'hidden';
 
         const explanations = document.getElementById('explanations');
         explanations.querySelectorAll('*').forEach(n => n.remove());
-        for (let e of suggestion.exampleCommitDescriptions) {
+        
+        // FIXME
+        if (ecd) for (let e of suggestion.exampleCommitDescriptions) {
           const exp = document.createElement("div");
           exp.className = "explanation font-light";
           exp.innerHTML = e;
@@ -537,6 +543,7 @@ export class SuggestionProvider implements SuggestionProviderInterface {
   }
 
   showPanel(suggestion: completeFileSuggestionType) {
+    console.warn("showPanel",suggestion.exampleCommitFixes, suggestion.exampleCommitDescriptions);
     if (this.panel) {
       this.panel.reveal(vscode.ViewColumn.Beside);
     } else {
