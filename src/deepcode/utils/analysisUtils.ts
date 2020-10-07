@@ -211,7 +211,7 @@ export const findCompleteSuggestion = (
   uri: vscode.Uri,
   position: vscode.Range,
 ): completeFileSuggestionType | undefined => {
-  let filePath = uri.path;
+  let filePath = uri.fsPath;
   if (!analysisResults.files[filePath]) return;
   const file: IFilePath = analysisResults.files[filePath];
   let fileSuggestion: IFileSuggestion | undefined;
