@@ -265,7 +265,7 @@ function getWebviewContent(images: Record<string,string>) { return `
             falsePositive,
             suggestionId,
             rating: feedbackLike,
-            project: 'vscode',
+            project: suggestion.uri,
           }
         });
         feedbackVisibility = 'sent';

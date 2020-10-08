@@ -1,3 +1,5 @@
+import * as _ from "lodash";
+import { COMMAND_DEBOUNCE_INTERVAL } from "../../constants/general";
 import { ReportModuleInterface, errorType } from "../../../interfaces/DeepCodeInterfaces";
 import BaseDeepCodeModule from './BaseDeepCodeModule';
 import { errorsLogs } from "../../messages/errorsServerLogMessages";
@@ -22,32 +24,40 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
     this.transientErrors = 0;
   }
 
-  private async sendEvent(event: string, options: { [key: string]: any }): Promise<void> {
-    if (!this.shouldReport || !this.shouldReportEvents) return;
-    try {
-      await reportEvent({
-        baseURL: this.baseURL,
-        type: event,
-        source: this.source,
-        ...(this.token && { sessionToken: this.token }),
-        ...options,
-      });
-    } catch (error) {
-      await this.processError(error, {
-        message: errorsLogs.sendEvent,
-        data: {
-          event,
+  private sendEvent = _.debounce(
+    async (event: string, options: { [key: string]: any }): Promise<void> => {
+      if (!this.shouldReport || !this.shouldReportEvents) return;
+      try {
+        await reportEvent({
+          baseURL: this.baseURL,
+          type: event,
           source: this.source,
           ...(this.token && { sessionToken: this.token }),
           ...options,
-        },
-      });
-    }
-  }
+        });
+      } catch (error) {
+        await this.processError(error, {
+          message: errorsLogs.sendEvent,
+          data: {
+            event,
+            source: this.source,
+            ...(this.token && { sessionToken: this.token }),
+            ...options,
+          },
+        });
+      }
+    },
+    COMMAND_DEBOUNCE_INTERVAL,
+    { leading: true, trailing: false },
+  );
 
   async processEvent(event: string, options: { [key: string]: any } = {}): Promise<void> {
     // processEvent must be safely callable without waiting its completition.
-    return this.sendEvent(event, options).catch(err => console.error('DeepCode event handler failed with error:', err));
+    try{
+      await this.sendEvent(event, options);
+    } catch(err) {
+      console.error('DeepCode event handler failed with error:', err);
+    }
   }
 
   async trackViewSuggestion(issueId: string, severity: number): Promise<void> {
@@ -58,19 +68,23 @@ abstract class ReportModule extends BaseDeepCodeModule implements ReportModuleIn
     });
   }
 
-  private async sendError(options: { [key: string]: any }): Promise<void> {
-    if (!this.shouldReport || !this.shouldReportErrors) return;
-    const resp = await reportError({
-      baseURL: this.baseURL,
-      source: this.source,
-      ...(this.token && { sessionToken: this.token }),
-      ...options,
-    });
+  private sendError = _.debounce(
+    async (options: { [key: string]: any }): Promise<void> => {
+      if (!this.shouldReport || !this.shouldReportErrors) return;
+      const resp = await reportError({
+        baseURL: this.baseURL,
+        source: this.source,
+        ...(this.token && { sessionToken: this.token }),
+        ...options,
+      });
 
-    if (resp.type === 'error') {
-      console.error(resp.error);
-    }
-  }
+      if (resp.type === 'error') {
+        console.error(resp.error);
+      }
+    },
+    COMMAND_DEBOUNCE_INTERVAL,
+    { leading: true, trailing: false },
+  );
 
   async processError(error: errorType, options: { [key: string]: any } = {}): Promise<void> {
     // We don't want to have unhandled rejections around, so if it
