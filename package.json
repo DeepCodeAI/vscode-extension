@@ -249,7 +249,7 @@
   },
   "dependencies": {
     "@deepcode/tsc": "^2.1.0",
-    "lodash": "^4.17.19",
+    "lodash": "^4.17.21",
     "open": "^7.3.1"
   }
 }
