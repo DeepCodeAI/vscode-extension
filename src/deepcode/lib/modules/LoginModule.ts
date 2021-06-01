@@ -15,6 +15,7 @@ const sleep = (duration: number) => new Promise(resolve => setTimeout(resolve, d
 abstract class LoginModule extends ReportModule implements LoginModuleInterface {
   private pendingLogin: boolean = false;
   private pendingToken = '';
+  private readonly deprecationNoteKey = 'deepcode.deprecationNoteMonth';
 
   async initiateLogin(): Promise<void> {
     await this.setContext(DEEPCODE_CONTEXT.LOGGEDIN, false);
@@ -130,6 +131,16 @@ abstract class LoginModule extends ReportModule implements LoginModuleInterface 
 
   async checkAdvancedMode(): Promise<void> {
     await this.setContext(DEEPCODE_CONTEXT.ADVANCED, this.shouldShowAdvancedView);
+  }
+
+  async checkDeprecationNote(context: vscode.ExtensionContext): Promise<void> {
+    const currentMonth = new Date().getMonth();
+    const lastMessageMonth: number | undefined = context.globalState.get(this.deprecationNoteKey);
+
+    if (!lastMessageMonth || currentMonth != lastMessageMonth) {
+      context.globalState.update(this.deprecationNoteKey, currentMonth);
+      await vscode.window.showInformationMessage(deepCodeMessages.deprecation.msg);
+    }
   }
 }
 

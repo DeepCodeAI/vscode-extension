@@ -22,6 +22,7 @@ import {
   DEEPCODE_VIEW_SUPPORT,
   DEEPCODE_VIEW_ANALYSIS,
   DEEPCODE_ANALYSIS_STATUS,
+  DEEPCODE_CONTEXT,
 } from './constants/views';
 import { openDeepcodeSettingsCommand, createDCIgnoreCommand } from './utils/vscodeCommandsUtils';
 import { errorsLogs } from './messages/errorsServerLogMessages';
@@ -161,12 +162,33 @@ class DeepCodeExtension extends DeepCodeLib implements ExtensionInterface {
       }),
     );
 
+    if (this.isApiDeprecated(context)) {
+      return;
+    }
+
     // Actually start analysis
     this.startExtension();
   }
 
   public deactivate(): void {
     emitter.removeAllListeners();
+  }
+
+  private isApiDeprecated(context: vscode.ExtensionContext): boolean {
+    // API is deprecated from 01.09.2021 onwards
+    const deprecated = Date.now() >= new Date(2021, 8, 1).getTime();
+    if (deprecated) {
+      this.setContext(DEEPCODE_CONTEXT.DEPRECATED, true);
+      return true;
+    }
+
+    this.checkDeprecationNote(context).catch(err =>
+      this.processError(err, {
+        message: errorsLogs.checkDeprecationNoteMode,
+      }),
+    );
+
+    return false;
   }
 
   onSupportedFilesLoaded(data: ISupportedFiles | null) {
