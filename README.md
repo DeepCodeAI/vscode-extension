@@ -1,3 +1,10 @@
+# Latest update 🗞️ (start here first 👇)
+
+- Dear developers 👋, thank you for your support and feedback!
+- With the DeepCode acquisition by [Snyk](https://snyk.io) we will be starting a new journey, a better one, towards helping you write robust and secure application code. The DeepCode extension will be replaced by [Snyk's VS Code extension](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner) which includes DeepCode's functionality and more.
+- If you want to read more about it, here is the [official announcement](https://www.deepcode.ai/). We will start sunsetting the official DeepCode API in August, 2021. In the mean time we will do one last update of the VS Code extension with this message to ensure you are up to date.
+- We invite you to join us and start using the new Snyk extension! We are excited and looking forward to helping you build stable and secure applications 🚀
+
 # DeepCode for Visual Studio Code
 
 **The Visual Studio Code extension provided by <a href="https://www.deepcode.ai/">DeepCode.ai</a> finds bugs and critical vulnerabilities in your code. We support JavaScript and TypeScript, Java, Python, C/C++, C# and PHP.**

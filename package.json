@@ -132,13 +132,18 @@
       },
       {
         "view": "deepcode.views.analysis",
+        "contents": "The DeepCode extension is deprecated. Please use [Snyk Vulnerability Scanner](command:workbench.extensions.search?%22snyk-security.snyk-vulnerability-scanner%22) with included DeepCode's functionality and more.",
+        "when": "deepcode:deprecated"
+      },
+      {
+        "view": "deepcode.views.analysis",
         "contents": "DeepCode has encountered a problem. Please restart the extension: \n[Restart](command:deepcode.start 'Restart DeepCode')\nIf the error persists, please check your [settings](command:deepcode.settings) and [contact us](https://www.deepcode.ai/feedback?select=2?utm_source=vsc)!",
         "when": "deepcode:error == 'blocking'"
       },
       {
         "view": "deepcode.views.analysis",
         "contents": "Welcome to DeepCode for Visual Studio Code. 👋\nLet's start by connecting VS Code with DeepCode:\n[Connect VS Code with DeepCode](command:deepcode.login 'Connect with DeepCode')\n👉 DeepCode's mission is to finds bugs, fast. Connect with DeepCode to start your first analysis!",
-        "when": "!deepcode:error && !deepcode:loggedIn"
+        "when": "!deepcode:error && !deepcode:loggedIn && !deepcode:deprecated"
       },
       {
         "view": "deepcode.views.analysis",
@@ -187,7 +192,7 @@
       "commandPalette": [
         {
           "command": "deepcode.login",
-          "when": "!deepcode:loggedIn"
+          "when": "!deepcode:loggedIn && !deepcode:deprecated"
         },
         {
           "command": "deepcode.dcignore",
@@ -199,7 +204,8 @@
       {
         "command": "deepcode.start",
         "title": "DeepCode re-scan",
-        "icon": "$(refresh)"
+        "icon": "$(refresh)",
+        "enablement": "!deepcode:deprecated"
       },
       {
         "command": "deepcode.settings",

@@ -12,6 +12,7 @@ export const DEEPCODE_CONTEXT = {
   ERROR: 'error',
   MODE: 'mode',
   ADVANCED: 'advanced',
+  DEPRECATED: 'deprecated',
 };
 
 export const DEEPCODE_ERROR_CODES = {
