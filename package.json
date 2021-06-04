@@ -254,7 +254,7 @@
     "yalc": "^1.0.0-pre.44"
   },
   "dependencies": {
-    "@deepcode/tsc": "^2.1.0",
+    "@deepcode/tsc": "^2.1.1",
     "lodash": "^4.17.19",
     "open": "^7.3.1"
   }
