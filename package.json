@@ -2,7 +2,7 @@
   "name": "deepcode",
   "//": "Changing display name requires change in general.ts",
   "displayName": "DeepCode",
-  "version": "3.0.11",
+  "version": "3.0.12",
   "description": "DeepCode finds bugs, security vulnerabilities, performance and API issues based on AI. DeepCode's speed of analysis allow us to analyse your code in real time and deliver results when you hit the save button in Visual Studio Code. We support Java, C/C++, JavaScript, Python, TypeScript, C# and PHP.",
   "icon": "images/deepCodeLogo.jpg",
   "publisher": "deepcode",
